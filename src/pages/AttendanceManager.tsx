@@ -57,18 +57,35 @@ import {
   Info,
   ChevronDown,
   Copy,
+  Check,
+  ChevronsUpDown,
 } from "lucide-react";
 import type { Client, DailyAttendance, Employee, ToastMessage } from "@/types";
 import { useLocalStorage } from "@/hooks";
 import { formatDate, generateId, getDaysInMonth, parseDateLabel } from "@/utilities";
 import { ToastContainer } from "@/components/toast";
-
+import { Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 export default function AttendanceManager() {
   const now = new Date();
   const selectedMonth = now.getMonth();
   const selectedYear = now.getFullYear();
   const todayStr = formatDate(now.getFullYear(), now.getMonth(), now.getDate());
+
+
+  const [employeeOpen, setEmployeeOpen] = useState(false);
+  const [clientOpen, setClientOpen] = useState(false);
+
 
   const [clients, setClients] = useLocalStorage<Client[]>("att_clients", []);
   const [employees, setEmployees] = useLocalStorage<Employee[]>(
@@ -1919,7 +1936,7 @@ export default function AttendanceManager() {
               <DialogTitle>Add Attendance</DialogTitle>
             </DialogHeader>
             <div className="space-y-3 mt-2">
-              <Select value={attClientId} onValueChange={setAttClientId}>
+              {/* <Select value={attClientId} onValueChange={setAttClientId}>
                 <SelectTrigger className="bg-slate-950/60 border-sky-900/40 text-slate-200">
                   <SelectValue placeholder="Select Client" />
                 </SelectTrigger>
@@ -1930,13 +1947,67 @@ export default function AttendanceManager() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
-              <Select value={attEmployeeId} onValueChange={setAttEmployeeId}>
+              </Select> */}
+              <Popover open={clientOpen} onOpenChange={setClientOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className="w-full justify-between bg-slate-950/60 border-sky-900/40 text-slate-200 hover:bg-slate-950/80"
+                  >
+                    {attClientId
+                      ? clients.find((c) => c.id === attClientId)?.name
+                      : "Select Client"}
+
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+
+                <PopoverContent
+                  align="start"
+                  className="w-[var(--radix-popover-trigger-width)] p-0 bg-slate-900 border-sky-900/50"
+                >
+                  <Command className="bg-slate-900 text-white">
+                    <CommandInput
+                      placeholder="Search client..."
+                      className="text-white"
+                    />
+
+                    <CommandEmpty className="py-3 text-center text-slate-400">
+                      No client found.
+                    </CommandEmpty>
+
+                    <CommandGroup className="max-h-64 overflow-y-auto">
+                      {clients.map((client) => (
+                        <CommandItem
+                          key={client.id}
+                          value={client.name}
+                          className="cursor-pointer text-white aria-selected:bg-slate-800 aria-selected:text-white"
+                          onSelect={() => {
+                            setAttClientId(client.id);
+                            setClientOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={`mr-2 h-4 w-4 ${
+                              attClientId === client.id
+                                ? "opacity-100"
+                                : "opacity-0"
+                            }`}
+                          />
+
+                          {client.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              {/* <Select value={attEmployeeId} onValueChange={setAttEmployeeId}>
                 <SelectTrigger className="bg-slate-950/60 border-sky-900/40 text-slate-200">
                   <SelectValue placeholder="Select Employee" />
                 </SelectTrigger>
-
-                <SelectContent className="max-h-72 bg-slate-900 border-sky-900/50 text-slate-200">
+                <SelectContent className="bg-slate-900 border-sky-900/50 text-slate-200">
                   {employees
                     .filter(
                       (e) =>
@@ -1950,7 +2021,69 @@ export default function AttendanceManager() {
                       </SelectItem>
                     ))}
                 </SelectContent>
-              </Select>
+              </Select> */}
+              <Popover open={employeeOpen} onOpenChange={setEmployeeOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className="w-full justify-between bg-slate-950/60 border-sky-900/40 text-slate-200 hover:bg-slate-950/80"
+                  >
+                    {attEmployeeId
+                      ? employees.find((e) => e.id === attEmployeeId)?.name
+                      : "Select Employee"}
+
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+
+                <PopoverContent
+                  align="start"
+                  className="w-[var(--radix-popover-trigger-width)] p-0 bg-slate-900 border-sky-900/50"
+                >
+                  <Command className="bg-slate-900 text-white">
+                    <CommandInput
+                      placeholder="Search employee..."
+                      className="text-white"
+                    />
+
+                    <CommandEmpty className="py-3 text-center text-slate-400">
+                      No employee found.
+                    </CommandEmpty>
+
+                    <CommandGroup className="max-h-64 overflow-y-auto">
+                      {employees
+                        .filter(
+                          (e) =>
+                            !getRecord(
+                              addAttendanceDialog?.date ?? "",
+                            ).absentees.includes(e.id),
+                        )
+                        .map((employee) => (
+                          <CommandItem
+                            key={employee.id}
+                            value={employee.name}
+                            className="cursor-pointer text-white aria-selected:bg-slate-800 aria-selected:text-white"
+                            onSelect={() => {
+                              setAttEmployeeId(employee.id);
+                              setEmployeeOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={`mr-2 h-4 w-4 ${
+                                attEmployeeId === employee.id
+                                  ? "opacity-100"
+                                  : "opacity-0"
+                              }`}
+                            />
+
+                            {employee.name}
+                          </CommandItem>
+                        ))}
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
               <Select
                 value={attShift}
                 onValueChange={(v) => setAttShift(v as "day" | "night")}
