@@ -56,6 +56,7 @@ import {
   Download,
   Info,
   ChevronDown,
+  Copy,
 } from "lucide-react";
 import type { Client, DailyAttendance, Employee, ToastMessage } from "@/types";
 import { useLocalStorage } from "@/hooks";
@@ -501,6 +502,64 @@ export default function AttendanceManager() {
     }
     addToast("Data cleared", "info");
     setClearDialog(null);
+  };
+
+  const copyAttendanceMessage = async (record: DailyAttendance) => {
+    const date = new Date(record.date);
+
+    const formattedDate = date.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+
+    let message = `📅 *${formattedDate}*\n\n`;
+
+    record.clients.forEach((clientRecord) => {
+      const clientName =
+        clients.find((c) => c.id === clientRecord.clientId)?.name ??
+        "Unknown Client";
+
+      message += `*🏢 ${clientName}:*\n`;
+
+      clientRecord.employees.forEach((emp) => {
+        const empName =
+          employees.find((e) => e.id === emp.employeeId)?.name ??
+          "Unknown Employee";
+
+        const shiftLabel = emp.shift === "night" ? " (N)" : " (D)";
+
+        if (emp.dutyCount > 1) {
+          for (let i = 0; i < emp.dutyCount; i++) {
+            message += `• ${empName}${shiftLabel}\n`;
+          }
+        } else {
+          message += `• ${empName}${shiftLabel}\n`;
+        }
+      });
+
+      message += "\n";
+    });
+
+    if (record.absentees.length > 0) {
+      message += `*❌ Absentees:*\n`;
+
+      record.absentees.forEach((empId) => {
+        const empName =
+          employees.find((e) => e.id === empId)?.name ?? "Unknown Employee";
+
+        message += `• ${empName}\n`;
+      });
+
+      message += "\n";
+    }
+
+    try {
+      await navigator.clipboard.writeText(message);
+      addToast("Attendance copied to clipboard");
+    } catch {
+      addToast("Failed to copy attendance", "error");
+    }
   };
 
   const downloadAnalyticsReport = () => {
@@ -1045,11 +1104,13 @@ export default function AttendanceManager() {
                         key={rec.date}
                         className="bg-slate-950/60 border-sky-900/40 hover:border-sky-600/60 hover:shadow-lg hover:shadow-blue-950/50 transition-all rounded-xl overflow-hidden"
                       >
-                        <CardHeader className="pb-2 flex flex-row items-center justify-between gap-2 bg-gradient-to-r from-sky-950/40 to-transparent">
+                        <CardHeader className="relative group pb-2 flex flex-row items-center justify-between gap-2 bg-gradient-to-r from-sky-950/40 to-transparent">
                           <CardTitle className="text-sm font-mono text-sky-300">
                             {parseDateLabel(rec.date)}
                           </CardTitle>
+
                           <div className="flex gap-1">
+                            {/* Assign Button */}
                             <Button
                               size="sm"
                               variant="ghost"
@@ -1073,6 +1134,8 @@ export default function AttendanceManager() {
                             >
                               <Plus className="w-3 h-3 mr-1" /> Assign
                             </Button>
+
+                            {/* Absent Button */}
                             <Button
                               size="sm"
                               variant="ghost"
@@ -1095,6 +1158,23 @@ export default function AttendanceManager() {
                               <UserX className="w-3 h-3 mr-1" /> Absent
                             </Button>
                           </div>
+
+                          {/* Floating Copy Icon */}
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="absolute top-1 right-1 h-7 w-7 rounded-md
+               opacity-0 group-hover:opacity-100
+               transition-all duration-200
+               text-sky-400 hover:text-sky-300
+               hover:bg-sky-950/60"
+                            onClick={() => {
+                              copyAttendanceMessage(rec);
+                              addToast("Attendance copied");
+                            }}
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                          </Button>
                         </CardHeader>
                         <CardContent className="space-y-3 pt-3">
                           {clientsToShow.length === 0 &&
