@@ -1187,7 +1187,6 @@ export default function AttendanceManager() {
                hover:bg-sky-950/60"
                             onClick={() => {
                               copyAttendanceMessage(rec);
-                              addToast("Attendance copied");
                             }}
                           >
                             <Copy className="w-3.5 h-3.5" />
