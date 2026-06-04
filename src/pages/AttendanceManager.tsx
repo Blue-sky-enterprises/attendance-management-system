@@ -1935,7 +1935,8 @@ export default function AttendanceManager() {
                 <SelectTrigger className="bg-slate-950/60 border-sky-900/40 text-slate-200">
                   <SelectValue placeholder="Select Employee" />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-900 border-sky-900/50 text-slate-200">
+
+                <SelectContent className="max-h-72 bg-slate-900 border-sky-900/50 text-slate-200">
                   {employees
                     .filter(
                       (e) =>
