@@ -23,13 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   Tooltip,
   TooltipContent,
@@ -57,24 +51,12 @@ import {
   Info,
   ChevronDown,
   Copy,
-  Check,
-  ChevronsUpDown,
 } from "lucide-react";
 import type { Client, DailyAttendance, Employee, ToastMessage } from "@/types";
 import { useLocalStorage } from "@/hooks";
 import { formatDate, generateId, getDaysInMonth, parseDateLabel } from "@/utilities";
 import { ToastContainer } from "@/components/toast";
-import { Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+
 
 export default function AttendanceManager() {
   const now = new Date();
@@ -83,8 +65,7 @@ export default function AttendanceManager() {
   const todayStr = formatDate(now.getFullYear(), now.getMonth(), now.getDate());
 
 
-  const [employeeOpen, setEmployeeOpen] = useState(false);
-  const [clientOpen, setClientOpen] = useState(false);
+
 
 
   const [clients, setClients] = useLocalStorage<Client[]>("att_clients", []);
@@ -1047,45 +1028,43 @@ export default function AttendanceManager() {
             <TabsContent value="attendance">
               {/* Filters */}
               <div className="flex flex-wrap gap-2 mb-5">
-                <Select value={filterClient} onValueChange={setFilterClient}>
-                  <SelectTrigger className="w-full sm:w-44 bg-slate-950/60 border-sky-900/40 text-xs h-9 rounded-lg">
-                    <SelectValue placeholder="All Clients" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-sky-900/50 text-slate-200">
-                    <SelectItem value="all">All Clients</SelectItem>
-                    {clients.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select
+                <SearchableSelect
+                  value={filterClient}
+                  onValueChange={setFilterClient}
+                  options={[
+                    { value: "all", label: "All Clients" },
+                    ...clients.map((c) => ({ value: c.id, label: c.name })),
+                  ]}
+                  placeholder="All Clients"
+                  searchPlaceholder="Search clients…"
+                  emptyText="No clients found."
+                  className="w-full sm:w-44"
+                />
+                <SearchableSelect
                   value={filterEmployee}
                   onValueChange={setFilterEmployee}
-                >
-                  <SelectTrigger className="w-full sm:w-48 bg-slate-950/60 border-sky-900/40 text-xs h-9 rounded-lg">
-                    <SelectValue placeholder="All Employees" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-sky-900/50 text-slate-200">
-                    <SelectItem value="all">All Employees</SelectItem>
-                    {employees.map((e) => (
-                      <SelectItem key={e.id} value={e.id}>
-                        {e.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={filterShift} onValueChange={setFilterShift}>
-                  <SelectTrigger className="w-full sm:w-36 bg-slate-950/60 border-sky-900/40 text-xs h-9 rounded-lg">
-                    <SelectValue placeholder="All Shifts" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-sky-900/50 text-slate-200">
-                    <SelectItem value="all">All Shifts</SelectItem>
-                    <SelectItem value="day">Day</SelectItem>
-                    <SelectItem value="night">Night</SelectItem>
-                  </SelectContent>
-                </Select>
+                  options={[
+                    { value: "all", label: "All Employees" },
+                    ...employees.map((e) => ({ value: e.id, label: e.name })),
+                  ]}
+                  placeholder="All Employees"
+                  searchPlaceholder="Search employees…"
+                  emptyText="No employees found."
+                  className="w-full sm:w-48"
+                />
+                <SearchableSelect
+                  value={filterShift}
+                  onValueChange={setFilterShift}
+                  options={[
+                    { value: "all", label: "All Shifts" },
+                    { value: "day", label: "Day", icon: <Sun className="w-3 h-3 text-amber-400" /> },
+                    { value: "night", label: "Night", icon: <Moon className="w-3 h-3 text-indigo-400" /> },
+                  ]}
+                  placeholder="All Shifts"
+                  searchPlaceholder="Search shifts…"
+                  emptyText="No shifts found."
+                  className="w-full sm:w-36"
+                />
                 {(filterClient !== "all" ||
                   filterEmployee !== "all" ||
                   filterShift !== "all") && (
@@ -1935,175 +1914,39 @@ export default function AttendanceManager() {
               <DialogTitle>Add Attendance</DialogTitle>
             </DialogHeader>
             <div className="space-y-3 mt-2">
-              {/* <Select value={attClientId} onValueChange={setAttClientId}>
-                <SelectTrigger className="bg-slate-950/60 border-sky-900/40 text-slate-200">
-                  <SelectValue placeholder="Select Client" />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-900 border-sky-900/50 text-slate-200">
-                  {clients.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select> */}
-              <Popover open={clientOpen} onOpenChange={setClientOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    className="w-full justify-between bg-slate-950/60 border-sky-900/40 text-slate-200 hover:bg-slate-950/80"
-                  >
-                    {attClientId
-                      ? clients.find((c) => c.id === attClientId)?.name
-                      : "Select Client"}
-
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-
-                <PopoverContent
-                  align="start"
-                  className="w-[var(--radix-popover-trigger-width)] p-0 bg-slate-900 border-sky-900/50"
-                >
-                  <Command className="bg-slate-900 text-white">
-                    <CommandInput
-                      placeholder="Search client..."
-                      className="text-white"
-                    />
-
-                    <CommandEmpty className="py-3 text-center text-slate-400">
-                      No client found.
-                    </CommandEmpty>
-
-                    <CommandGroup className="max-h-64 overflow-y-auto">
-                      {clients.map((client) => (
-                        <CommandItem
-                          key={client.id}
-                          value={client.name}
-                          className="cursor-pointer text-white aria-selected:bg-slate-800 aria-selected:text-white"
-                          onSelect={() => {
-                            setAttClientId(client.id);
-                            setClientOpen(false);
-                          }}
-                        >
-                          <Check
-                            className={`mr-2 h-4 w-4 ${
-                              attClientId === client.id
-                                ? "opacity-100"
-                                : "opacity-0"
-                            }`}
-                          />
-
-                          {client.name}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-              {/* <Select value={attEmployeeId} onValueChange={setAttEmployeeId}>
-                <SelectTrigger className="bg-slate-950/60 border-sky-900/40 text-slate-200">
-                  <SelectValue placeholder="Select Employee" />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-900 border-sky-900/50 text-slate-200">
-                  {employees
-                    .filter(
-                      (e) =>
-                        !getRecord(
-                          addAttendanceDialog?.date ?? "",
-                        ).absentees.includes(e.id),
-                    )
-                    .map((e) => (
-                      <SelectItem key={e.id} value={e.id}>
-                        {e.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select> */}
-              <Popover open={employeeOpen} onOpenChange={setEmployeeOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    className="w-full justify-between bg-slate-950/60 border-sky-900/40 text-slate-200 hover:bg-slate-950/80"
-                  >
-                    {attEmployeeId
-                      ? employees.find((e) => e.id === attEmployeeId)?.name
-                      : "Select Employee"}
-
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-
-                <PopoverContent
-                  align="start"
-                  className="w-[var(--radix-popover-trigger-width)] p-0 bg-slate-900 border-sky-900/50"
-                >
-                  <Command className="bg-slate-900 text-white">
-                    <CommandInput
-                      placeholder="Search employee..."
-                      className="text-white"
-                    />
-
-                    <CommandEmpty className="py-3 text-center text-slate-400">
-                      No employee found.
-                    </CommandEmpty>
-
-                    <CommandGroup className="max-h-64 overflow-y-auto">
-                      {employees
-                        .filter(
-                          (e) =>
-                            !getRecord(
-                              addAttendanceDialog?.date ?? "",
-                            ).absentees.includes(e.id),
-                        )
-                        .map((employee) => (
-                          <CommandItem
-                            key={employee.id}
-                            value={employee.name}
-                            className="cursor-pointer text-white aria-selected:bg-slate-800 aria-selected:text-white"
-                            onSelect={() => {
-                              setAttEmployeeId(employee.id);
-                              setEmployeeOpen(false);
-                            }}
-                          >
-                            <Check
-                              className={`mr-2 h-4 w-4 ${
-                                attEmployeeId === employee.id
-                                  ? "opacity-100"
-                                  : "opacity-0"
-                              }`}
-                            />
-
-                            {employee.name}
-                          </CommandItem>
-                        ))}
-                    </CommandGroup>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-              <Select
+              <SearchableSelect
+                value={attClientId}
+                onValueChange={setAttClientId}
+                options={clients.map((c) => ({ value: c.id, label: c.name }))}
+                placeholder="Select Client"
+                searchPlaceholder="Search client…"
+                emptyText="No client found."
+              />
+              <SearchableSelect
+                value={attEmployeeId}
+                onValueChange={setAttEmployeeId}
+                options={employees
+                  .filter(
+                    (e) =>
+                      !getRecord(
+                        addAttendanceDialog?.date ?? "",
+                      ).absentees.includes(e.id),
+                  )
+                  .map((e) => ({ value: e.id, label: e.name }))}
+                placeholder="Select Employee"
+                searchPlaceholder="Search employee…"
+                emptyText="No employee found."
+              />
+              <SearchableSelect
                 value={attShift}
                 onValueChange={(v) => setAttShift(v as "day" | "night")}
-              >
-                <SelectTrigger className="bg-slate-950/60 border-sky-900/40 text-slate-200">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-900 border-sky-900/50 text-slate-200">
-                  <SelectItem value="day">
-                    <span className="flex items-center gap-2">
-                      <Sun className="w-3.5 h-3.5 text-amber-400" /> Day Shift
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="night">
-                    <span className="flex items-center gap-2">
-                      <Moon className="w-3.5 h-3.5 text-indigo-400" /> Night
-                      Shift
-                    </span>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+                options={[
+                  { value: "day", label: "Day Shift", icon: <Sun className="w-3.5 h-3.5 text-amber-400" /> },
+                  { value: "night", label: "Night Shift", icon: <Moon className="w-3.5 h-3.5 text-indigo-400" /> },
+                ]}
+                placeholder="Select Shift"
+                searchPlaceholder="Search shift…"
+              />
             </div>
             <DialogFooter className="mt-4">
               <Button
@@ -2137,27 +1980,23 @@ export default function AttendanceManager() {
               </DialogTitle>
             </DialogHeader>
             <div className="mt-2">
-              <Select value={absenteeId} onValueChange={setAbsenteeId}>
-                <SelectTrigger className="bg-slate-950/60 border-sky-900/40 text-slate-200">
-                  <SelectValue placeholder="Select Employee" />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-900 border-sky-900/50 text-slate-200">
-                  {employees
-                    .filter((e) => {
-                      const record = getRecord(addAbsenteeDialog?.date ?? "");
-                      const isAbsent = record.absentees.includes(e.id);
-                      const isPresent = record.clients.some((cl) =>
-                        cl.employees.some((emp) => emp.employeeId === e.id),
-                      );
-                      return !isAbsent && !isPresent;
-                    })
-                    .map((e) => (
-                      <SelectItem key={e.id} value={e.id}>
-                        {e.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                value={absenteeId}
+                onValueChange={setAbsenteeId}
+                options={employees
+                  .filter((e) => {
+                    const record = getRecord(addAbsenteeDialog?.date ?? "");
+                    const isAbsent = record.absentees.includes(e.id);
+                    const isPresent = record.clients.some((cl) =>
+                      cl.employees.some((emp) => emp.employeeId === e.id),
+                    );
+                    return !isAbsent && !isPresent;
+                  })
+                  .map((e) => ({ value: e.id, label: e.name }))}
+                placeholder="Select Employee"
+                searchPlaceholder="Search employee…"
+                emptyText="No employee found."
+              />
             </div>
             <DialogFooter className="mt-4">
               <Button
