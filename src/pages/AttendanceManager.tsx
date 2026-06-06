@@ -51,6 +51,8 @@ import {
   Info,
   ChevronDown,
   Copy,
+  Lock,
+  LockOpen,
 } from "lucide-react";
 import type { Client, DailyAttendance, Employee, ToastMessage } from "@/types";
 import { useLocalStorage } from "@/hooks";
@@ -63,7 +65,7 @@ export default function AttendanceManager() {
   const selectedMonth = now.getMonth();
   const selectedYear = now.getFullYear();
   const todayStr = formatDate(now.getFullYear(), now.getMonth(), now.getDate());
-
+  const [lockedDates, setLockedDates] = useState<Record<string, boolean>>({});
 
 
 
@@ -144,6 +146,13 @@ export default function AttendanceManager() {
     );
   }, [selectedYear, selectedMonth]);
 
+  const toggleLock = (date: string) => {
+    setLockedDates((prev) => ({
+      ...prev,
+      [date]: !prev[date],
+    }));
+  };
+
   // Ensure all month dates exist in records
   useEffect(() => {
     setAttendanceRecords((prev) => {
@@ -156,6 +165,22 @@ export default function AttendanceManager() {
       ];
     });
   }, [monthDates, setAttendanceRecords]);
+
+  useEffect(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const initialLocks: Record<string, boolean> = {};
+
+    attendanceRecords.forEach((rec) => {
+      const recordDate = new Date(rec.date);
+      recordDate.setHours(0, 0, 0, 0);
+
+      initialLocks[rec.date] = recordDate < today;
+    });
+
+    setLockedDates(initialLocks);
+  }, [attendanceRecords]);
 
   const getRecord = useCallback(
     (date: string): DailyAttendance =>
@@ -1096,200 +1121,448 @@ export default function AttendanceManager() {
                         ? rec.clients.filter((c) => c.clientId === filterClient)
                         : rec.clients;
                     return (
-                      <Card
-                        key={rec.date}
-                        className="bg-slate-950/60 border-sky-900/40 hover:border-sky-600/60 hover:shadow-lg hover:shadow-blue-950/50 transition-all rounded-xl overflow-hidden"
-                      >
-                        <CardHeader className="relative group pb-2 flex flex-row items-center justify-between gap-2 bg-gradient-to-r from-sky-950/40 to-transparent">
-                          <CardTitle className="text-sm font-mono text-sky-300">
-                            {parseDateLabel(rec.date)}
-                          </CardTitle>
+              //         <Card
+              //           key={rec.date}
+              //           className="bg-slate-950/60 border-sky-900/40 hover:border-sky-600/60 hover:shadow-lg hover:shadow-blue-950/50 transition-all rounded-xl overflow-hidden"
+              //         >
+              //           <CardHeader className="relative group pb-2 flex flex-row items-center justify-between gap-2 bg-gradient-to-r from-sky-950/40 to-transparent">
+              //             <CardTitle className="text-sm font-mono text-sky-300">
+              //               {parseDateLabel(rec.date)}
+              //             </CardTitle>
 
-                          <div className="flex gap-1">
-                            {/* Assign Button */}
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-7 text-xs text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/60 px-2 rounded-md"
-                              onClick={() => {
-                                if (rec.date > todayStr) {
-                                  addToast(
-                                    "Cannot record attendance for future dates",
-                                    "error",
+              //             <div className="flex gap-1">
+              //               {/* Assign Button */}
+              //               <Button
+              //                 size="sm"
+              //                 variant="ghost"
+              //                 className="h-7 text-xs text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/60 px-2 rounded-md"
+              //                 onClick={() => {
+              //                   if (rec.date > todayStr) {
+              //                     addToast(
+              //                       "Cannot record attendance for future dates",
+              //                       "error",
+              //                     );
+              //                     return;
+              //                   }
+              //                   setAttClientId("");
+              //                   setAttEmployeeId("");
+              //                   setAttShift("day");
+              //                   setAddAttendanceDialog({
+              //                     open: true,
+              //                     date: rec.date,
+              //                   });
+              //                 }}
+              //               >
+              //                 <Plus className="w-3 h-3 mr-1" /> Assign
+              //               </Button>
+
+              //               {/* Absent Button */}
+              //               <Button
+              //                 size="sm"
+              //                 variant="ghost"
+              //                 className="h-7 text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-950/60 px-2 rounded-md"
+              //                 onClick={() => {
+              //                   if (rec.date > todayStr) {
+              //                     addToast(
+              //                       "Cannot mark absentees for future dates",
+              //                       "error",
+              //                     );
+              //                     return;
+              //                   }
+              //                   setAbsenteeId("");
+              //                   setAddAbsenteeDialog({
+              //                     open: true,
+              //                     date: rec.date,
+              //                   });
+              //                 }}
+              //               >
+              //                 <UserX className="w-3 h-3 mr-1" /> Absent
+              //               </Button>
+              //             </div>
+
+              //             {/* Floating Copy Icon */}
+              //             <Button
+              //               size="icon"
+              //               variant="ghost"
+              //               className="absolute top-1 right-1 h-7 w-7 rounded-md
+              //  opacity-0 group-hover:opacity-100
+              //  transition-all duration-200
+              //  text-sky-400 hover:text-sky-300
+              //  hover:bg-sky-950/60"
+              //               onClick={() => {
+              //                 copyAttendanceMessage(rec);
+              //               }}
+              //             >
+              //               <Copy className="w-3.5 h-3.5" />
+              //             </Button>
+              //           </CardHeader>
+              //           <CardContent className="space-y-3 pt-3">
+              //             {clientsToShow.length === 0 &&
+              //             rec.absentees.length === 0 ? (
+              //               <p className="text-xs text-slate-600 italic">
+              //                 No records for this day
+              //               </p>
+              //             ) : (
+              //               <>
+              //                 {clientsToShow.map((cl) => {
+              //                   const clientName =
+              //                     clients.find((c) => c.id === cl.clientId)
+              //                       ?.name ?? "Unknown";
+              //                   const empsToShow =
+              //                     filterEmployee !== "all"
+              //                       ? cl.employees.filter(
+              //                           (e) => e.employeeId === filterEmployee,
+              //                         )
+              //                       : cl.employees;
+              //                   const shiftFiltered =
+              //                     filterShift !== "all"
+              //                       ? empsToShow.filter(
+              //                           (e) => e.shift === filterShift,
+              //                         )
+              //                       : empsToShow;
+              //                   if (shiftFiltered.length === 0) return null;
+              //                   return (
+              //                     <div key={cl.clientId}>
+              //                       <p className="text-xs font-semibold text-slate-300 flex items-center gap-1 mb-1.5">
+              //                         <Building2 className="w-3 h-3 text-sky-400" />
+              //                         {clientName}
+              //                       </p>
+              //                       <div className="flex flex-wrap gap-1">
+              //                         {shiftFiltered.map((emp) => {
+              //                           const empName =
+              //                             employees.find(
+              //                               (e) => e.id === emp.employeeId,
+              //                             )?.name ?? "Unknown";
+              //                           return (
+              //                             <Tooltip
+              //                               key={`${emp.employeeId}-${emp.shift}`}
+              //                             >
+              //                               <TooltipTrigger asChild>
+              //                                 <Badge
+              //                                   className={`text-xs cursor-pointer flex items-center gap-1 transition-colors ${
+              //                                     emp.shift === "night"
+              //                                       ? "bg-indigo-950 text-indigo-200 hover:bg-indigo-900 border border-indigo-700"
+              //                                       : "bg-amber-950 text-amber-200 hover:bg-amber-900 border border-amber-700"
+              //                                   }`}
+              //                                   onClick={() => {
+              //                                     if (rec.date > todayStr) {
+              //                                       addToast(
+              //                                         "Cannot modify attendance for future dates",
+              //                                         "error",
+              //                                       );
+              //                                       return;
+              //                                     }
+              //                                     removeAssignment(
+              //                                       rec.date,
+              //                                       cl.clientId,
+              //                                       emp.employeeId,
+              //                                       emp.shift,
+              //                                     );
+              //                                   }}
+              //                                 >
+              //                                   {emp.shift === "night" ? (
+              //                                     <Moon className="w-2.5 h-2.5" />
+              //                                   ) : (
+              //                                     <Sun className="w-2.5 h-2.5" />
+              //                                   )}
+              //                                   {empName}
+              //                                   {emp.dutyCount > 1 && (
+              //                                     <span className="ml-0.5 opacity-70">
+              //                                       ×{emp.dutyCount}
+              //                                     </span>
+              //                                   )}
+              //                                   <X className="w-2.5 h-2.5 opacity-50 hover:opacity-100" />
+              //                                 </Badge>
+              //                               </TooltipTrigger>
+              //                               <TooltipContent className="bg-slate-800 text-slate-200 text-xs border-sky-900/50">
+              //                                 Click to remove one duty
+              //                               </TooltipContent>
+              //                             </Tooltip>
+              //                           );
+              //                         })}
+              //                       </div>
+              //                     </div>
+              //                   );
+              //                 })}
+              //                 {rec.absentees.length > 0 && (
+              //                   <div>
+              //                     <Separator className="bg-sky-900/40 my-2" />
+              //                     <p className="text-xs font-semibold text-rose-400 flex items-center gap-1 mb-1.5">
+              //                       <UserX className="w-3 h-3" /> Absentees
+              //                     </p>
+              //                     <div className="flex flex-wrap gap-1">
+              //                       {rec.absentees.map((empId) => {
+              //                         const empName =
+              //                           employees.find((e) => e.id === empId)
+              //                             ?.name ?? "Unknown";
+              //                         return (
+              //                           <Badge
+              //                             key={empId}
+              //                             className="text-xs bg-rose-950 text-rose-300 border border-rose-800 cursor-pointer hover:bg-rose-900"
+              //                             onClick={() =>
+              //                               removeAbsentee(rec.date, empId)
+              //                             }
+              //                           >
+              //                             {empName}{" "}
+              //                             <X className="w-2.5 h-2.5 ml-1 opacity-60" />
+              //                           </Badge>
+              //                         );
+              //                       })}
+              //                     </div>
+              //                   </div>
+              //                 )}
+              //               </>
+              //             )}
+              //           </CardContent>
+              //         </Card>
+              <Card
+                  key={rec.date}
+                  className={`border hover:shadow-lg transition-all rounded-xl overflow-hidden ${
+                    lockedDates[rec.date]
+                      ? "bg-slate-950/80 border-amber-800/50 hover:border-amber-700/60 hover:shadow-amber-950/40"
+                      : "bg-slate-950/60 border-sky-900/40 hover:border-sky-600/60 hover:shadow-blue-950/50"
+                  }`}
+                >
+                  <CardHeader className="relative group pb-2 px-3 pt-3 flex flex-row items-center justify-between gap-2 bg-gradient-to-r from-sky-950/40 to-transparent">
+
+                  {/* Left: Lock + Date + Locked pill */}
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className={`h-6 w-6 rounded-md shrink-0 transition-all duration-200 ${
+                            lockedDates[rec.date]
+                              ? "text-amber-400 bg-amber-950/70 hover:bg-amber-900/80 hover:text-amber-300"
+                              : "text-slate-600 hover:text-amber-400 hover:bg-amber-950/50"
+                          }`}
+                          onClick={() => toggleLock(rec.date)}
+                        >
+                          {lockedDates[rec.date]
+                            ? <Lock className="w-3 h-3" />
+                            : <LockOpen className="w-3 h-3" />}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent className="bg-slate-800 text-slate-200 text-xs border-sky-900/50">
+                        {lockedDates[rec.date] ? "Unlock this date" : "Lock this date"}
+                      </TooltipContent>
+                    </Tooltip>
+
+                    <CardTitle className="text-sm font-mono text-sky-300 truncate">
+                      {rec.date.split("-")[2]}
+                    </CardTitle>
+
+                    {lockedDates[rec.date] && (
+                      <span className="shrink-0 inline-flex items-center gap-0.5 text-[9px] font-semibold tracking-wide uppercase text-amber-500 bg-amber-950/60 border border-amber-800/50 px-1.5 py-0.5 rounded-full">
+                        <Lock className="w-2 h-2" /> Locked
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Right: Actions + Copy — all inline, copy revealed on hover */}
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={lockedDates[rec.date]}
+                      className={`h-6 text-xs px-2 rounded-md transition-colors ${
+                        lockedDates[rec.date]
+                          ? "text-slate-700 cursor-not-allowed opacity-50"
+                          : "text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/60"
+                      }`}
+                      onClick={() => {
+                        if (lockedDates[rec.date]) return;
+                        if (rec.date > todayStr) {
+                          addToast("Cannot record attendance for future dates", "error");
+                          return;
+                        }
+                        setAttClientId("");
+                        setAttEmployeeId("");
+                        setAttShift("day");
+                        setAddAttendanceDialog({ open: true, date: rec.date });
+                      }}
+                    >
+                      <Plus className="w-3 h-3 mr-0.5" /> Assign
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={lockedDates[rec.date]}
+                      className={`h-6 text-xs px-2 rounded-md transition-colors ${
+                        lockedDates[rec.date]
+                          ? "text-slate-700 cursor-not-allowed opacity-50"
+                          : "text-rose-400 hover:text-rose-300 hover:bg-rose-950/60"
+                      }`}
+                      onClick={() => {
+                        if (lockedDates[rec.date]) return;
+                        if (rec.date > todayStr) {
+                          addToast("Cannot mark absentees for future dates", "error");
+                          return;
+                        }
+                        setAbsenteeId("");
+                        setAddAbsenteeDialog({ open: true, date: rec.date });
+                      }}
+                    >
+                      <UserX className="w-3 h-3 mr-0.5" /> Absent
+                    </Button>
+
+                    {/* Divider */}
+                    <div className="w-px h-4 bg-sky-900/40 mx-0.5" />
+
+                    {/* Copy — always in flow, revealed on group hover */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-6 w-6 rounded-md opacity-0 group-hover:opacity-100 transition-all duration-200 text-sky-500 hover:text-sky-300 hover:bg-sky-950/60"
+                          onClick={() => copyAttendanceMessage(rec)}
+                        >
+                          <Copy className="w-3 h-3" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent className="bg-slate-800 text-slate-200 text-xs border-sky-900/50">
+                        Copy attendance message
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+
+                </CardHeader>
+
+                  <CardContent className="space-y-3 pt-3">
+                    {/* Locked overlay message */}
+                    {lockedDates[rec.date] && (
+                      <div className="flex items-center gap-2 text-xs text-amber-600/80 bg-amber-950/30 border border-amber-900/30 rounded-lg px-3 py-2">
+                        <Lock className="w-3 h-3 shrink-0" />
+                        <span>This date is locked. Unlock to make changes.</span>
+                      </div>
+                    )}
+
+                    {clientsToShow.length === 0 && rec.absentees.length === 0 ? (
+                      <p className="text-xs text-slate-600 italic">No records for this day</p>
+                    ) : (
+                      <>
+                        {clientsToShow.map((cl) => {
+                          const clientName =
+                            clients.find((c) => c.id === cl.clientId)?.name ?? "Unknown";
+                          const empsToShow =
+                            filterEmployee !== "all"
+                              ? cl.employees.filter((e) => e.employeeId === filterEmployee)
+                              : cl.employees;
+                          const shiftFiltered =
+                            filterShift !== "all"
+                              ? empsToShow.filter((e) => e.shift === filterShift)
+                              : empsToShow;
+                          if (shiftFiltered.length === 0) return null;
+                          return (
+                            <div key={cl.clientId}>
+                              <p className="text-xs font-semibold text-slate-300 flex items-center gap-1 mb-1.5">
+                                <Building2 className="w-3 h-3 text-sky-400" />
+                                {clientName}
+                              </p>
+                              <div className="flex flex-wrap gap-1">
+                                {shiftFiltered.map((emp) => {
+                                  const empName =
+                                    employees.find((e) => e.id === emp.employeeId)?.name ??
+                                    "Unknown";
+                                  return (
+                                    <Tooltip key={`${emp.employeeId}-${emp.shift}`}>
+                                      <TooltipTrigger asChild>
+                                        <Badge
+                                          className={`text-xs flex items-center gap-1 transition-colors ${
+                                            lockedDates[rec.date]
+                                              ? "cursor-default opacity-60"
+                                              : "cursor-pointer"
+                                          } ${
+                                            emp.shift === "night"
+                                              ? "bg-indigo-950 text-indigo-200 hover:bg-indigo-900 border border-indigo-700"
+                                              : "bg-amber-950 text-amber-200 hover:bg-amber-900 border border-amber-700"
+                                          }`}
+                                          onClick={() => {
+                                            if (lockedDates[rec.date]) return;
+                                            if (rec.date > todayStr) {
+                                              addToast(
+                                                "Cannot modify attendance for future dates",
+                                                "error",
+                                              );
+                                              return;
+                                            }
+                                            removeAssignment(
+                                              rec.date,
+                                              cl.clientId,
+                                              emp.employeeId,
+                                              emp.shift,
+                                            );
+                                          }}
+                                        >
+                                          {emp.shift === "night" ? (
+                                            <Moon className="w-2.5 h-2.5" />
+                                          ) : (
+                                            <Sun className="w-2.5 h-2.5" />
+                                          )}
+                                          {empName}
+                                          {emp.dutyCount > 1 && (
+                                            <span className="ml-0.5 opacity-70">
+                                              ×{emp.dutyCount}
+                                            </span>
+                                          )}
+                                          {!lockedDates[rec.date] && (
+                                            <X className="w-2.5 h-2.5 opacity-50 hover:opacity-100" />
+                                          )}
+                                        </Badge>
+                                      </TooltipTrigger>
+                                      <TooltipContent className="bg-slate-800 text-slate-200 text-xs border-sky-900/50">
+                                        {lockedDates[rec.date]
+                                          ? "Unlock date to remove"
+                                          : "Click to remove one duty"}
+                                      </TooltipContent>
+                                    </Tooltip>
                                   );
-                                  return;
-                                }
-                                setAttClientId("");
-                                setAttEmployeeId("");
-                                setAttShift("day");
-                                setAddAttendanceDialog({
-                                  open: true,
-                                  date: rec.date,
-                                });
-                              }}
-                            >
-                              <Plus className="w-3 h-3 mr-1" /> Assign
-                            </Button>
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })}
 
-                            {/* Absent Button */}
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-7 text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-950/60 px-2 rounded-md"
-                              onClick={() => {
-                                if (rec.date > todayStr) {
-                                  addToast(
-                                    "Cannot mark absentees for future dates",
-                                    "error",
-                                  );
-                                  return;
-                                }
-                                setAbsenteeId("");
-                                setAddAbsenteeDialog({
-                                  open: true,
-                                  date: rec.date,
-                                });
-                              }}
-                            >
-                              <UserX className="w-3 h-3 mr-1" /> Absent
-                            </Button>
-                          </div>
-
-                          {/* Floating Copy Icon */}
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="absolute top-1 right-1 h-7 w-7 rounded-md
-               opacity-0 group-hover:opacity-100
-               transition-all duration-200
-               text-sky-400 hover:text-sky-300
-               hover:bg-sky-950/60"
-                            onClick={() => {
-                              copyAttendanceMessage(rec);
-                            }}
-                          >
-                            <Copy className="w-3.5 h-3.5" />
-                          </Button>
-                        </CardHeader>
-                        <CardContent className="space-y-3 pt-3">
-                          {clientsToShow.length === 0 &&
-                          rec.absentees.length === 0 ? (
-                            <p className="text-xs text-slate-600 italic">
-                              No records for this day
+                        {rec.absentees.length > 0 && (
+                          <div>
+                            <Separator className="bg-sky-900/40 my-2" />
+                            <p className="text-xs font-semibold text-rose-400 flex items-center gap-1 mb-1.5">
+                              <UserX className="w-3 h-3" /> Absentees
                             </p>
-                          ) : (
-                            <>
-                              {clientsToShow.map((cl) => {
-                                const clientName =
-                                  clients.find((c) => c.id === cl.clientId)
-                                    ?.name ?? "Unknown";
-                                const empsToShow =
-                                  filterEmployee !== "all"
-                                    ? cl.employees.filter(
-                                        (e) => e.employeeId === filterEmployee,
-                                      )
-                                    : cl.employees;
-                                const shiftFiltered =
-                                  filterShift !== "all"
-                                    ? empsToShow.filter(
-                                        (e) => e.shift === filterShift,
-                                      )
-                                    : empsToShow;
-                                if (shiftFiltered.length === 0) return null;
+                            <div className="flex flex-wrap gap-1">
+                              {rec.absentees.map((empId) => {
+                                const empName =
+                                  employees.find((e) => e.id === empId)?.name ?? "Unknown";
                                 return (
-                                  <div key={cl.clientId}>
-                                    <p className="text-xs font-semibold text-slate-300 flex items-center gap-1 mb-1.5">
-                                      <Building2 className="w-3 h-3 text-sky-400" />
-                                      {clientName}
-                                    </p>
-                                    <div className="flex flex-wrap gap-1">
-                                      {shiftFiltered.map((emp) => {
-                                        const empName =
-                                          employees.find(
-                                            (e) => e.id === emp.employeeId,
-                                          )?.name ?? "Unknown";
-                                        return (
-                                          <Tooltip
-                                            key={`${emp.employeeId}-${emp.shift}`}
-                                          >
-                                            <TooltipTrigger asChild>
-                                              <Badge
-                                                className={`text-xs cursor-pointer flex items-center gap-1 transition-colors ${
-                                                  emp.shift === "night"
-                                                    ? "bg-indigo-950 text-indigo-200 hover:bg-indigo-900 border border-indigo-700"
-                                                    : "bg-amber-950 text-amber-200 hover:bg-amber-900 border border-amber-700"
-                                                }`}
-                                                onClick={() => {
-                                                  if (rec.date > todayStr) {
-                                                    addToast(
-                                                      "Cannot modify attendance for future dates",
-                                                      "error",
-                                                    );
-                                                    return;
-                                                  }
-                                                  removeAssignment(
-                                                    rec.date,
-                                                    cl.clientId,
-                                                    emp.employeeId,
-                                                    emp.shift,
-                                                  );
-                                                }}
-                                              >
-                                                {emp.shift === "night" ? (
-                                                  <Moon className="w-2.5 h-2.5" />
-                                                ) : (
-                                                  <Sun className="w-2.5 h-2.5" />
-                                                )}
-                                                {empName}
-                                                {emp.dutyCount > 1 && (
-                                                  <span className="ml-0.5 opacity-70">
-                                                    ×{emp.dutyCount}
-                                                  </span>
-                                                )}
-                                                <X className="w-2.5 h-2.5 opacity-50 hover:opacity-100" />
-                                              </Badge>
-                                            </TooltipTrigger>
-                                            <TooltipContent className="bg-slate-800 text-slate-200 text-xs border-sky-900/50">
-                                              Click to remove one duty
-                                            </TooltipContent>
-                                          </Tooltip>
-                                        );
-                                      })}
-                                    </div>
-                                  </div>
+                                  <Badge
+                                    key={empId}
+                                    className={`text-xs bg-rose-950 text-rose-300 border border-rose-800 transition-colors ${
+                                      lockedDates[rec.date]
+                                        ? "cursor-default opacity-60"
+                                        : "cursor-pointer hover:bg-rose-900"
+                                    }`}
+                                    onClick={() => {
+                                      if (lockedDates[rec.date]) return;
+                                      removeAbsentee(rec.date, empId);
+                                    }}
+                                  >
+                                    {empName}
+                                    {!lockedDates[rec.date] && (
+                                      <X className="w-2.5 h-2.5 ml-1 opacity-60" />
+                                    )}
+                                  </Badge>
                                 );
                               })}
-                              {rec.absentees.length > 0 && (
-                                <div>
-                                  <Separator className="bg-sky-900/40 my-2" />
-                                  <p className="text-xs font-semibold text-rose-400 flex items-center gap-1 mb-1.5">
-                                    <UserX className="w-3 h-3" /> Absentees
-                                  </p>
-                                  <div className="flex flex-wrap gap-1">
-                                    {rec.absentees.map((empId) => {
-                                      const empName =
-                                        employees.find((e) => e.id === empId)
-                                          ?.name ?? "Unknown";
-                                      return (
-                                        <Badge
-                                          key={empId}
-                                          className="text-xs bg-rose-950 text-rose-300 border border-rose-800 cursor-pointer hover:bg-rose-900"
-                                          onClick={() =>
-                                            removeAbsentee(rec.date, empId)
-                                          }
-                                        >
-                                          {empName}{" "}
-                                          <X className="w-2.5 h-2.5 ml-1 opacity-60" />
-                                        </Badge>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
-                              )}
-                            </>
-                          )}
-                        </CardContent>
-                      </Card>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
                     );
                   })}
                 </div>
