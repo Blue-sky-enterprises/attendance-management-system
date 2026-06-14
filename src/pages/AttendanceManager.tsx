@@ -53,14 +53,23 @@ import {
   Copy,
   Lock,
   LockOpen,
+  Wallet,
+  IndianRupee,
+  CheckCircle2,
+  Circle,
+  Receipt,
+  TrendingDown,
 } from "lucide-react";
-import type { Client, DailyAttendance, Employee, ToastMessage } from "@/types";
-import { useLocalStorage } from "@/hooks";
+import type { BorrowingRecord, Client, DailyAttendance, Employee, ToastMessage } from "@/types";
+import { useLocalStorage, useTheme } from "@/hooks";
 import { formatDate, generateId, getDaysInMonth, parseDateLabel } from "@/utilities";
 import { ToastContainer } from "@/components/toast";
+import { ThemeToggle } from "@/components/ThemeToggle";
+
 
 
 export default function AttendanceManager() {
+  useTheme();
   const now = new Date();
   const selectedMonth = now.getMonth();
   const selectedYear = now.getFullYear();
@@ -78,6 +87,7 @@ export default function AttendanceManager() {
   const [attendanceRecords, setAttendanceRecords] = useLocalStorage<
     DailyAttendance[]
   >("att_records", []);
+  const [borrowings, setBorrowings] = useLocalStorage<BorrowingRecord[]>("att_borrowings", []);
 
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [expandedLeaders, setExpandedLeaders] = useState<string[]>([]);
@@ -107,6 +117,13 @@ export default function AttendanceManager() {
     date: string;
   } | null>(null);
 
+  // Borrowing/Fine dialog states
+  const [borrowingDialog, setBorrowingDialog] = useState<{
+    open: boolean;
+    editing: BorrowingRecord | null;
+  }>({ open: false, editing: null });
+  const [deleteBorrowingDialog, setDeleteBorrowingDialog] = useState<BorrowingRecord | null>(null);
+
   // Form states
   const [clientName, setClientName] = useState("");
   const [employeeName, setEmployeeName] = useState("");
@@ -115,12 +132,25 @@ export default function AttendanceManager() {
   const [attShift, setAttShift] = useState<"day" | "night">("day");
   const [absenteeId, setAbsenteeId] = useState("");
 
+  // Borrowing/Fine form states
+  const [bEmployeeId, setBEmployeeId] = useState("");
+  const [bAmount, setBAmount] = useState("");
+  const [bDate, setBDate] = useState(todayStr);
+  const [bNote, setBNote] = useState("");
+  const [bType, setBType] = useState<"borrowing" | "fine">("borrowing");
+
   // Search/filter
   const [searchEmployee, setSearchEmployee] = useState("");
   const [searchClient, setSearchClient] = useState("");
   const [filterClient, setFilterClient] = useState("all");
   const [filterEmployee, setFilterEmployee] = useState("all");
   const [filterShift, setFilterShift] = useState("all");
+
+  // Borrowing/Fine filters
+  const [filterBEmployee, setFilterBEmployee] = useState("all");
+  const [filterBType, setFilterBType] = useState("all");
+  const [filterBSettled, setFilterBSettled] = useState("all");
+
 
   const addToast = useCallback(
     (message: string, type: ToastMessage["type"] = "success") => {
@@ -364,6 +394,8 @@ export default function AttendanceManager() {
         absentees: r.absentees.filter((id) => id !== e.id),
       })),
     );
+    // Also remove their borrowing/fine records
+    setBorrowings((prev) => prev.filter((b) => b.employeeId !== e.id));
     addToast(`Employee "${e.name}" deleted`, "info");
     setDeleteEmployeeDialog(null);
   };
@@ -508,6 +540,7 @@ export default function AttendanceManager() {
       setClients([]);
       setEmployees([]);
       setAttendanceRecords([]);
+      setBorrowings([]);
     } else if (type === "clients") {
       setClients([]);
       setAttendanceRecords((prev) => prev.map((r) => ({ ...r, clients: [] })));
@@ -520,12 +553,114 @@ export default function AttendanceManager() {
           absentees: [],
         })),
       );
+      setBorrowings([]);
     } else if (type === "attendance") {
       setAttendanceRecords([]);
+    } else if (type === "borrowings") {
+      setBorrowings([]);
     }
     addToast("Data cleared", "info");
     setClearDialog(null);
   };
+
+  // ── Borrowings / Fines CRUD ─────────────────────────────────────────────────
+
+  const openAddBorrowing = () => {
+    setBEmployeeId("");
+    setBAmount("");
+    setBDate(todayStr);
+    setBNote("");
+    setBType("borrowing");
+    setBorrowingDialog({ open: true, editing: null });
+  };
+
+  const openEditBorrowing = (b: BorrowingRecord) => {
+    setBEmployeeId(b.employeeId);
+    setBAmount(String(b.amount));
+    setBDate(b.date);
+    setBNote(b.note);
+    setBType(b.type);
+    setBorrowingDialog({ open: true, editing: b });
+  };
+
+  const saveBorrowing = () => {
+    const amt = parseFloat(bAmount);
+    if (!bEmployeeId || isNaN(amt) || amt <= 0) {
+      addToast("Please fill all required fields with valid values", "error");
+      return;
+    }
+    if (borrowingDialog.editing) {
+      setBorrowings((prev) =>
+        prev.map((b) =>
+          b.id === borrowingDialog.editing!.id
+            ? { ...b, employeeId: bEmployeeId, amount: amt, date: bDate, note: bNote.trim(), type: bType }
+            : b
+        )
+      );
+      addToast("Record updated");
+    } else {
+      setBorrowings((prev) => [
+        ...prev,
+        { id: generateId(), employeeId: bEmployeeId, amount: amt, date: bDate, note: bNote.trim(), type: bType, settled: false },
+      ]);
+      addToast(bType === "fine" ? "Fine recorded" : "Borrowing recorded");
+    }
+    setBorrowingDialog({ open: false, editing: null });
+  };
+
+  const deleteBorrowing = (b: BorrowingRecord) => {
+    setBorrowings((prev) => prev.filter((x) => x.id !== b.id));
+    addToast("Record deleted", "info");
+    setDeleteBorrowingDialog(null);
+  };
+
+  const toggleSettled = (id: string) => {
+    setBorrowings((prev) =>
+      prev.map((b) => (b.id === id ? { ...b, settled: !b.settled } : b))
+    );
+  };
+
+  // ── Borrowing Stats ─────────────────────────────────────────────────────────
+
+  const borrowingStats = useMemo(() => {
+    let totalBorrowed = 0;
+    let totalFines = 0;
+    let settledBorrowed = 0;
+    let settledFines = 0;
+
+    for (const b of borrowings) {
+      if (b.type === "borrowing") {
+        totalBorrowed += b.amount;
+        if (b.settled) settledBorrowed += b.amount;
+      } else {
+        totalFines += b.amount;
+        if (b.settled) settledFines += b.amount;
+      }
+    }
+
+    const outstandingBorrowed = totalBorrowed - settledBorrowed;
+    const outstandingFines = totalFines - settledFines;
+    const totalOutstanding = outstandingBorrowed + outstandingFines;
+    const totalSettled = settledBorrowed + settledFines;
+
+    // Per-employee breakdown
+    const empMap: Record<string, { borrowed: number; fines: number; settled: number }> = {};
+    for (const b of borrowings) {
+      if (!empMap[b.employeeId]) empMap[b.employeeId] = { borrowed: 0, fines: 0, settled: 0 };
+      if (b.type === "borrowing") empMap[b.employeeId].borrowed += b.amount;
+      else empMap[b.employeeId].fines += b.amount;
+      if (b.settled) empMap[b.employeeId].settled += b.amount;
+    }
+
+    const perEmployee = Object.entries(empMap).map(([id, vals]) => ({
+      id,
+      name: employees.find((e) => e.id === id)?.name ?? "Unknown",
+      ...vals,
+      outstanding: vals.borrowed + vals.fines - vals.settled,
+    })).sort((a, b) => b.outstanding - a.outstanding);
+
+    return { totalBorrowed, totalFines, outstandingBorrowed, outstandingFines, totalOutstanding, totalSettled, perEmployee };
+  }, [borrowings, employees]);
 
   const copyAttendanceMessage = async (record: DailyAttendance) => {
     const date = new Date(record.date);
@@ -708,6 +843,40 @@ export default function AttendanceManager() {
       });
     }
 
+    report += `--------------------------------------------------\n`;
+    report += `5. FINES & BORROWINGS SUMMARY\n`;
+    report += `--------------------------------------------------\n`;
+    report += `- Total Borrowed    : Rs. ${borrowingStats.totalBorrowed.toLocaleString("en-IN")}\n`;
+    report += `- Total Fines       : Rs. ${borrowingStats.totalFines.toLocaleString("en-IN")}\n`;
+    report += `- Total Settled     : Rs. ${borrowingStats.totalSettled.toLocaleString("en-IN")}\n`;
+    report += `- Total Outstanding : Rs. ${borrowingStats.totalOutstanding.toLocaleString("en-IN")}\n\n`;
+
+    if (borrowingStats.perEmployee.length > 0) {
+      report += `Per-Employee Outstanding:\n`;
+      report += `${"-".repeat(60)}\n`;
+      report += `${ "Employee Name".padEnd(28)} | ${ "Borrowed".padEnd(12)} | ${ "Fines".padEnd(12)} | Outstanding\n`;
+      report += `${"-".repeat(28)}---${"---".repeat(14)}\n`;
+      borrowingStats.perEmployee.forEach((ep) => {
+        report += `${ep.name.padEnd(28)} | Rs.${String(ep.borrowed.toLocaleString("en-IN")).padEnd(10)} | Rs.${String(ep.fines.toLocaleString("en-IN")).padEnd(10)} | Rs.${ep.outstanding.toLocaleString("en-IN")}\n`;
+      });
+      report += `\n`;
+    }
+
+    if (borrowings.length > 0) {
+      report += `Detailed Records:\n`;
+      report += `${"-".repeat(60)}\n`;
+      const sortedBorrowings = [...borrowings].sort((a, b) => a.date.localeCompare(b.date));
+      sortedBorrowings.forEach((b) => {
+        const empName = employees.find((e) => e.id === b.employeeId)?.name ?? "Unknown";
+        const typeLabel = b.type === "fine" ? "Fine" : "Borrowing";
+        const statusLabel = b.settled ? "Settled" : "Outstanding";
+        report += `${b.date} | ${empName.padEnd(20)} | ${typeLabel.padEnd(10)} | Rs.${b.amount.toLocaleString("en-IN").padEnd(10)} | ${statusLabel} | ${b.note || "-"}\n`;
+      });
+    } else {
+      report += `No fines or borrowing records found.\n`;
+    }
+    report += `\n`;
+
     const blob = new Blob([report], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -852,6 +1021,38 @@ export default function AttendanceManager() {
       });
     }
 
+    // Fines & Borrowings section
+    addRow([]);
+    addRow(["FINES & BORROWINGS SUMMARY"]);
+    addRow(["Total Borrowed", `Rs. ${borrowingStats.totalBorrowed.toLocaleString("en-IN")}`]);
+    addRow(["Total Fines", `Rs. ${borrowingStats.totalFines.toLocaleString("en-IN")}`]);
+    addRow(["Total Settled", `Rs. ${borrowingStats.totalSettled.toLocaleString("en-IN")}`]);
+    addRow(["Total Outstanding", `Rs. ${borrowingStats.totalOutstanding.toLocaleString("en-IN")}`]);
+    addRow([]);
+
+    addRow(["PER-EMPLOYEE BREAKDOWN"]);
+    addRow(["Employee", "Borrowed", "Fines", "Settled", "Outstanding"]);
+    if (borrowingStats.perEmployee.length === 0) {
+      addRow(["No records"]);
+    } else {
+      borrowingStats.perEmployee.forEach((ep) => {
+        addRow([ep.name, `Rs. ${ep.borrowed.toLocaleString("en-IN")}`, `Rs. ${ep.fines.toLocaleString("en-IN")}`, `Rs. ${ep.settled.toLocaleString("en-IN")}`, `Rs. ${ep.outstanding.toLocaleString("en-IN")}`]);
+      });
+    }
+    addRow([]);
+
+    addRow(["DETAILED FINE & BORROWING RECORDS"]);
+    addRow(["Date", "Employee", "Type", "Amount", "Status", "Note/Reason"]);
+    if (borrowings.length === 0) {
+      addRow(["No records found."]);
+    } else {
+      const sortedBorrowings = [...borrowings].sort((a, b) => a.date.localeCompare(b.date));
+      sortedBorrowings.forEach((b) => {
+        const empName = employees.find((e) => e.id === b.employeeId)?.name ?? "Unknown";
+        addRow([b.date, empName, b.type === "fine" ? "Fine" : "Borrowing", `Rs. ${b.amount.toLocaleString("en-IN")}`, b.settled ? "Settled" : "Outstanding", b.note || "-"]);
+      });
+    }
+
     const blob = new Blob(["\ufeff" + csvContent], {
       type: "text/csv;charset=utf-8;",
     });
@@ -918,7 +1119,7 @@ export default function AttendanceManager() {
 
   return (
     <TooltipProvider>
-      <div className="min-h-screen w-full bg-gradient-to-br from-[#06101f] via-[#081428] to-[#0a1a36] text-slate-100 font-sans">
+      <div className="app-shell min-h-screen w-full bg-gradient-to-br from-[#06101f] via-[#081428] to-[#0a1a36] text-slate-100 font-sans">
         {/* ── Header ── */}
         <header className="sticky top-0 z-40 border-b border-sky-900/30 bg-[#06101f]/85 backdrop-blur-xl">
           <div className="w-full px-4 sm:px-6 lg:px-10 h-12 flex items-center justify-between gap-4">
@@ -983,26 +1184,7 @@ export default function AttendanceManager() {
               </span>
 
               {/* Theme Toggle */}
-
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      type="button"
-                      disabled
-                      aria-label="Toggle theme"
-                      className="relative inline-flex items-center justify-center w-8 h-8 rounded-lg bg-sky-950/40 border border-sky-900/40 text-sky-200 hover:text-amber-300 hover:border-sky-500/40 hover:bg-sky-500/10 transition-all duration-200 group disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      <Sun className="w-4 h-4 absolute transition-all duration-300" />
-                      <Moon className="w-4 h-4 absolute transition-all duration-300 opacity-0" />
-                    </button>
-                  </TooltipTrigger>
-
-                  <TooltipContent>
-                    <p>🚧 Theme switcher coming soon. Work in progress.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <ThemeToggle />
             </div>
           </div>
         </header>
@@ -1031,6 +1213,11 @@ export default function AttendanceManager() {
                   value: "analytics",
                   icon: <BarChart3 className="w-3.5 h-3.5" />,
                   label: "Analytics",
+                },
+                {
+                  value: "fines",
+                  icon: <Wallet className="w-3.5 h-3.5" />,
+                  label: "Fines & Borrowings",
                 },
                 {
                   value: "settings",
@@ -1634,6 +1821,22 @@ export default function AttendanceManager() {
                 ))}
               </div>
 
+              {/* Fines & Borrowings quick summary in analytics */}
+              {(borrowingStats.totalOutstanding > 0 || borrowingStats.totalFines > 0) && (
+                <div className="grid gap-4 grid-cols-2 lg:grid-cols-2 mb-6">
+                  <Card className="bg-gradient-to-br from-orange-500/10 to-slate-950/60 border-orange-900/40 px-5 py-4 rounded-xl hover:border-orange-600/60 transition-colors">
+                    <div className="text-orange-400 mb-2"><TrendingDown className="w-5 h-5" /></div>
+                    <p className="text-3xl font-bold text-white tabular-nums">₹{borrowingStats.totalOutstanding.toLocaleString("en-IN")}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">Outstanding Balance</p>
+                  </Card>
+                  <Card className="bg-gradient-to-br from-red-500/10 to-slate-950/60 border-red-900/40 px-5 py-4 rounded-xl hover:border-red-600/60 transition-colors">
+                    <div className="text-red-400 mb-2"><Receipt className="w-5 h-5" /></div>
+                    <p className="text-3xl font-bold text-white tabular-nums">₹{borrowingStats.totalFines.toLocaleString("en-IN")}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">Total Fines Issued</p>
+                  </Card>
+                </div>
+              )}
+
               {stats.topEmployee && (
                 <Card className="bg-gradient-to-br from-amber-950/60 via-amber-900/20 to-transparent border-amber-800/60 mb-6 px-5 py-4 rounded-xl">
                   <div className="flex items-center gap-3">
@@ -1800,7 +2003,248 @@ export default function AttendanceManager() {
               </Card>
             </TabsContent>
 
-            {/* ══ SETTINGS TAB ══ */}
+            {/* ══ FINES & BORROWINGS TAB ══ */}
+            <TabsContent value="fines">
+              {/* Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+                <div>
+                  <h2 className="text-base font-semibold text-slate-200">Fines & Borrowings</h2>
+                  <p className="text-xs text-slate-500">Track money borrowed by employees and fines issued</p>
+                </div>
+                <Button
+                  size="sm"
+                  className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-400 hover:to-red-500 text-white h-9 shadow-md shadow-red-950/40 rounded-lg shrink-0"
+                  onClick={openAddBorrowing}
+                >
+                  <Plus className="w-4 h-4 mr-1" /> Add Record
+                </Button>
+              </div>
+
+              {/* Summary cards */}
+              <div className="grid gap-4 grid-cols-2 lg:grid-cols-4 mb-6">
+                {[
+                  { label: "Total Borrowed", value: borrowingStats.totalBorrowed, icon: <Wallet className="w-5 h-5" />, color: "text-yellow-400", glow: "from-yellow-500/10", border: "border-yellow-900/40" },
+                  { label: "Total Fines", value: borrowingStats.totalFines, icon: <Receipt className="w-5 h-5" />, color: "text-red-400", glow: "from-red-500/10", border: "border-red-900/40" },
+                  { label: "Outstanding", value: borrowingStats.totalOutstanding, icon: <TrendingDown className="w-5 h-5" />, color: "text-orange-400", glow: "from-orange-500/10", border: "border-orange-900/40" },
+                  { label: "Total Settled", value: borrowingStats.totalSettled, icon: <CheckCircle2 className="w-5 h-5" />, color: "text-emerald-400", glow: "from-emerald-500/10", border: "border-emerald-900/40" },
+                ].map((s) => (
+                  <Card key={s.label} className={`bg-gradient-to-br ${s.glow} to-slate-950/60 ${s.border} px-5 py-4 rounded-xl hover:border-opacity-80 transition-colors`}>
+                    <div className={`${s.color} mb-2`}>{s.icon}</div>
+                    <p className="text-2xl font-bold text-white tabular-nums">₹{s.value.toLocaleString("en-IN")}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{s.label}</p>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Filters */}
+              <div className="flex flex-wrap gap-2 mb-5">
+                <SearchableSelect
+                  value={filterBEmployee}
+                  onValueChange={setFilterBEmployee}
+                  options={[
+                    { value: "all", label: "All Employees" },
+                    ...employees.map((e) => ({ value: e.id, label: e.name })),
+                  ]}
+                  placeholder="All Employees"
+                  searchPlaceholder="Search employees…"
+                  emptyText="No employees found."
+                  className="w-full sm:w-48"
+                />
+                <SearchableSelect
+                  value={filterBType}
+                  onValueChange={setFilterBType}
+                  options={[
+                    { value: "all", label: "All Types" },
+                    { value: "borrowing", label: "Borrowings", icon: <Wallet className="w-3 h-3 text-yellow-400" /> },
+                    { value: "fine", label: "Fines", icon: <Receipt className="w-3 h-3 text-red-400" /> },
+                  ]}
+                  placeholder="All Types"
+                  searchPlaceholder="Search type…"
+                  emptyText="No types found."
+                  className="w-full sm:w-40"
+                />
+                <SearchableSelect
+                  value={filterBSettled}
+                  onValueChange={setFilterBSettled}
+                  options={[
+                    { value: "all", label: "All Status" },
+                    { value: "outstanding", label: "Outstanding", icon: <Circle className="w-3 h-3 text-orange-400" /> },
+                    { value: "settled", label: "Settled", icon: <CheckCircle2 className="w-3 h-3 text-emerald-400" /> },
+                  ]}
+                  placeholder="All Status"
+                  searchPlaceholder="Search status…"
+                  emptyText="No status found."
+                  className="w-full sm:w-40"
+                />
+                {(filterBEmployee !== "all" || filterBType !== "all" || filterBSettled !== "all") && (
+                  <Button variant="ghost" size="sm" className="h-9 text-xs text-slate-400 hover:text-white hover:bg-sky-900/40"
+                    onClick={() => { setFilterBEmployee("all"); setFilterBType("all"); setFilterBSettled("all"); }}>
+                    <X className="w-3 h-3 mr-1" /> Clear
+                  </Button>
+                )}
+              </div>
+
+              {/* Records list */}
+              {(() => {
+                const filtered = borrowings
+                  .filter((b) => {
+                    if (filterBEmployee !== "all" && b.employeeId !== filterBEmployee) return false;
+                    if (filterBType !== "all" && b.type !== filterBType) return false;
+                    if (filterBSettled === "outstanding" && b.settled) return false;
+                    if (filterBSettled === "settled" && !b.settled) return false;
+                    return true;
+                  })
+                  .sort((a, b) => b.date.localeCompare(a.date));
+
+                if (borrowings.length === 0) {
+                  return (
+                    <div className="text-center py-24 text-slate-500">
+                      <Wallet className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                      <p className="font-medium">No records yet</p>
+                      <p className="text-xs mt-1 text-slate-600">Click "Add Record" to track borrowings or fines</p>
+                    </div>
+                  );
+                }
+
+                if (filtered.length === 0) {
+                  return (
+                    <div className="text-center py-16 text-slate-500">
+                      <Search className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                      <p className="text-sm">No records match the filters.</p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="space-y-2">
+                    {filtered.map((b) => {
+                      const empName = employees.find((e) => e.id === b.employeeId)?.name ?? "Unknown";
+                      const isFine = b.type === "fine";
+                      return (
+                        <div
+                          key={b.id}
+                          className={`group relative flex flex-col sm:flex-row sm:items-center gap-3 px-4 py-3.5 rounded-xl border transition-all ${
+                            b.settled
+                              ? "bg-emerald-950/10 border-emerald-900/20 hover:border-emerald-800/40"
+                              : isFine
+                              ? "bg-red-950/20 border-red-900/30 hover:border-red-700/50"
+                              : "bg-amber-950/20 border-amber-900/30 hover:border-amber-700/50"
+                          }`}
+                        >
+                          {/* Left: Avatar + Name */}
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 ${
+                              isFine
+                                ? "bg-gradient-to-br from-red-700 to-red-900 text-red-100"
+                                : "bg-gradient-to-br from-amber-700 to-amber-900 text-amber-100"
+                            }`}>
+                              {empName[0]?.toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-slate-200 truncate">{empName}</p>
+                              <p className="text-xs text-slate-500 truncate">{b.note || "No reason provided"}</p>
+                            </div>
+                          </div>
+
+                          {/* Center: Type badge + Date */}
+                          <div className="flex items-center gap-2 shrink-0">
+                            <Badge className={`text-[11px] px-2 py-0.5 rounded-md font-semibold ${
+                              isFine
+                                ? "bg-red-900/60 text-red-200 border border-red-700/50"
+                                : "bg-amber-900/60 text-amber-200 border border-amber-700/50"
+                            }`}>
+                              {isFine ? <Receipt className="w-2.5 h-2.5 mr-1" /> : <Wallet className="w-2.5 h-2.5 mr-1" />}
+                              {isFine ? "Fine" : "Borrowing"}
+                            </Badge>
+                            <span className="text-xs text-slate-500 tabular-nums">{b.date}</span>
+                          </div>
+
+                          {/* Amount */}
+                          <div className="shrink-0 text-right">
+                            <p className={`text-base font-bold tabular-nums ${
+                              b.settled ? "text-emerald-400" : isFine ? "text-red-300" : "text-amber-300"
+                            }`}>
+                              ₹{b.amount.toLocaleString("en-IN")}
+                            </p>
+                            <p className={`text-[10px] font-semibold uppercase tracking-wide ${
+                              b.settled ? "text-emerald-600" : "text-slate-600"
+                            }`}>
+                              {b.settled ? "Settled" : "Outstanding"}
+                            </p>
+                          </div>
+
+                          {/* Actions */}
+                          <div className="flex items-center gap-1 shrink-0">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  type="button"
+                                  onClick={() => toggleSettled(b.id)}
+                                  className={`h-8 w-8 rounded-lg flex items-center justify-center transition-all ${
+                                    b.settled
+                                      ? "text-emerald-400 hover:text-emerald-200 hover:bg-emerald-950/60"
+                                      : "text-slate-500 hover:text-emerald-400 hover:bg-emerald-950/40"
+                                  }`}
+                                >
+                                  {b.settled ? <CheckCircle2 className="w-4 h-4" /> : <Circle className="w-4 h-4" />}
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent className="bg-slate-800 text-slate-200 text-xs border-sky-900/50">
+                                {b.settled ? "Mark as outstanding" : "Mark as settled"}
+                              </TooltipContent>
+                            </Tooltip>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-white hover:bg-sky-900/40" onClick={() => openEditBorrowing(b)}>
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-rose-400 hover:bg-rose-950/40" onClick={() => setDeleteBorrowingDialog(b)}>
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+
+              {/* Per-employee outstanding breakdown */}
+              {borrowingStats.perEmployee.length > 0 && (
+                <Card className="bg-slate-950/60 border-sky-900/40 rounded-xl mt-6">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm text-slate-300 flex items-center gap-2">
+                      <IndianRupee className="w-4 h-4 text-orange-400" />
+                      Per-Employee Outstanding
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {borrowingStats.perEmployee.map((ep) => (
+                        <div key={ep.id} className="flex items-center gap-3 py-2 border-b border-slate-800/60 last:border-0">
+                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center text-xs font-bold text-slate-200 shrink-0">
+                            {ep.name[0]?.toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-slate-200 truncate">{ep.name}</p>
+                            <div className="flex gap-3 text-xs text-slate-500 mt-0.5">
+                              {ep.borrowed > 0 && <span className="text-amber-500">Borrowed ₹{ep.borrowed.toLocaleString("en-IN")}</span>}
+                              {ep.fines > 0 && <span className="text-red-500">Fined ₹{ep.fines.toLocaleString("en-IN")}</span>}
+                              {ep.settled > 0 && <span className="text-emerald-600">Settled ₹{ep.settled.toLocaleString("en-IN")}</span>}
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <p className={`text-sm font-bold tabular-nums ${ep.outstanding > 0 ? "text-orange-300" : "text-emerald-400"}`}>
+                              ₹{ep.outstanding.toLocaleString("en-IN")}
+                            </p>
+                            <p className="text-[10px] text-slate-600 uppercase tracking-wide">{ep.outstanding > 0 ? "Due" : "Clear"}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+
             <TabsContent value="settings">
               <Card className="bg-slate-950/60 border-rose-900/40 max-w-2xl rounded-xl">
                 <CardHeader>
@@ -1814,7 +2258,7 @@ export default function AttendanceManager() {
                     {
                       key: "all",
                       label: "Clear All Data",
-                      desc: "Removes clients, employees & all attendance",
+                      desc: "Removes clients, employees, attendance & borrowings",
                     },
                     {
                       key: "clients",
@@ -1824,12 +2268,17 @@ export default function AttendanceManager() {
                     {
                       key: "employees",
                       label: "Clear Employees Only",
-                      desc: "Removes all employees and related records",
+                      desc: "Removes all employees, related records & borrowings",
                     },
                     {
                       key: "attendance",
                       label: "Clear Attendance Only",
                       desc: "Removes all daily attendance records",
+                    },
+                    {
+                      key: "borrowings",
+                      label: "Clear Fines & Borrowings Only",
+                      desc: "Removes all borrowings and fine records",
                     },
                   ].map((opt) => (
                     <div
@@ -2144,7 +2593,138 @@ export default function AttendanceManager() {
           </AlertDialogContent>
         </AlertDialog>
 
+
+        {/* Add/Edit Borrowing or Fine */}
+        <Dialog
+          open={borrowingDialog.open}
+          onOpenChange={(o) => !o && setBorrowingDialog({ open: false, editing: null })}
+        >
+          <DialogContent className="bg-slate-900 border-sky-900/50 text-slate-100 max-w-sm rounded-xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                {borrowingDialog.editing ? (
+                  <><Edit2 className="w-4 h-4 text-sky-400" /> Edit Record</>
+                ) : (
+                  <><Plus className="w-4 h-4 text-orange-400" /> Add Record</>
+                )}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 mt-2">
+              {/* Type toggle */}
+              <div className="flex rounded-lg overflow-hidden border border-sky-900/40">
+                <button
+                  type="button"
+                  onClick={() => setBType("borrowing")}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold transition-all ${
+                    bType === "borrowing"
+                      ? "bg-gradient-to-r from-amber-600 to-amber-700 text-amber-100"
+                      : "bg-slate-950/60 text-slate-400 hover:text-amber-300"
+                  }`}
+                >
+                  <Wallet className="w-3.5 h-3.5" /> Borrowing
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBType("fine")}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold transition-all ${
+                    bType === "fine"
+                      ? "bg-gradient-to-r from-red-600 to-red-700 text-red-100"
+                      : "bg-slate-950/60 text-slate-400 hover:text-red-300"
+                  }`}
+                >
+                  <Receipt className="w-3.5 h-3.5" /> Fine
+                </button>
+              </div>
+
+              {/* Employee */}
+              <SearchableSelect
+                value={bEmployeeId}
+                onValueChange={setBEmployeeId}
+                options={employees.map((e) => ({ value: e.id, label: e.name }))}
+                placeholder="Select Employee"
+                searchPlaceholder="Search employee…"
+                emptyText="No employee found."
+              />
+
+              {/* Amount */}
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-semibold">₹</span>
+                <Input
+                  className="pl-7 bg-slate-950/60 border-sky-900/40 text-slate-100"
+                  placeholder="Amount"
+                  type="number"
+                  min="1"
+                  value={bAmount}
+                  onChange={(e) => setBAmount(e.target.value)}
+                />
+              </div>
+
+              {/* Date */}
+              <Input
+                className="bg-slate-950/60 border-sky-900/40 text-slate-100"
+                type="date"
+                value={bDate}
+                max={todayStr}
+                onChange={(e) => setBDate(e.target.value)}
+              />
+
+              {/* Note / Reason */}
+              <Input
+                className="bg-slate-950/60 border-sky-900/40 text-slate-100"
+                placeholder={bType === "fine" ? "Reason for fine…" : "Note / reason…"}
+                value={bNote}
+                onChange={(e) => setBNote(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && saveBorrowing()}
+              />
+            </div>
+            <DialogFooter className="mt-4">
+              <Button variant="ghost" className="text-slate-400" onClick={() => setBorrowingDialog({ open: false, editing: null })}>
+                Cancel
+              </Button>
+              <Button
+                className={`text-white ${bType === "fine" ? "bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600" : "bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600"}`}
+                disabled={!bEmployeeId || !bAmount}
+                onClick={saveBorrowing}
+              >
+                {borrowingDialog.editing ? "Update" : "Save"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Borrowing / Fine */}
+        <AlertDialog
+          open={!!deleteBorrowingDialog}
+          onOpenChange={(o) => !o && setDeleteBorrowingDialog(null)}
+        >
+          <AlertDialogContent className="bg-slate-900 border-sky-900/50 text-slate-100 rounded-xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Record</AlertDialogTitle>
+              <AlertDialogDescription className="text-slate-400">
+                Remove this {deleteBorrowingDialog?.type === "fine" ? "fine" : "borrowing"} record of{" "}
+                <strong className="text-slate-200">₹{deleteBorrowingDialog?.amount.toLocaleString("en-IN")}</strong>{" "}
+                for{" "}
+                <strong className="text-slate-200">
+                  {employees.find((e) => e.id === deleteBorrowingDialog?.employeeId)?.name ?? "Unknown"}
+                </strong>? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="bg-slate-800 border-sky-900/40 text-slate-300 hover:bg-slate-700">
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-rose-700 hover:bg-rose-600"
+                onClick={() => deleteBorrowingDialog && deleteBorrowing(deleteBorrowingDialog)}
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         <ToastContainer toasts={toasts} onRemove={removeToast} />
+
       </div>
     </TooltipProvider>
   );
