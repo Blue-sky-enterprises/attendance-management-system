@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SectionPreviewCard } from "./SectionPreviewCard";
-import type { ImportPreviewData, RestoreApproval, SectionKey } from "@/backup/backupTypes";
+import type { ImportPreviewData, RestoreApproval, SectionKey,BackupPayload } from "@/backup/backupTypes";
 import { ALL_SECTION_KEYS, SECTION_LABEL } from "@/backup/backupTypes";
 import { writeSections } from "@/backup/storage";
 import { formatBytes, formatISODate } from "@/backup/utils";

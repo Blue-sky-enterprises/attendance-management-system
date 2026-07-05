@@ -14,7 +14,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { importBackup } from "@/backup/importBackup";
 import { BackupPreview } from "./BackupPreview";
-import type { ImportPreviewData, SectionKey } from "@/backup/backupTypes";
+// import type { ImportPreviewData, SectionKey } from "@/backup/backupTypes";
+import type {
+  ImportPreviewData,
+  SectionKey,
+  BackupPayload,
+  RestoreApproval,
+} from "@/backup/backupTypes";
 import { SECTION_LABEL } from "@/backup/backupTypes";
 
 // ─── File dropzone ────────────────────────────────────────────────────────────
