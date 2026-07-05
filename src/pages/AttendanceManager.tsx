@@ -59,17 +59,20 @@ import {
   Circle,
   Receipt,
   TrendingDown,
+  DatabaseBackup,
 } from "lucide-react";
 import type { BorrowingRecord, Client, DailyAttendance, Employee, ToastMessage } from "@/types";
 import { useLocalStorage, useTheme } from "@/hooks";
 import { formatDate, generateId, getDaysInMonth, parseDateLabel } from "@/utilities";
 import { ToastContainer } from "@/components/toast";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { ExportPanel } from "@/components/backup/ExportPanel";
+import { ImportPanel } from "@/components/backup/ImportPanel";
 
 
 
 export default function AttendanceManager() {
-  useTheme();
+  const { setTheme } = useTheme();
   const now = new Date();
   const selectedMonth = now.getMonth();
   const selectedYear = now.getFullYear();
@@ -236,6 +239,16 @@ export default function AttendanceManager() {
     },
     [setAttendanceRecords],
   );
+
+  const outdatedRecord = useMemo(() => {
+    const currentMonthPrefix = `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}`;
+    return attendanceRecords.find((rec) => {
+      const isNotThisMonth = !rec.date.startsWith(currentMonthPrefix);
+      const hasAssignments = rec.clients.some((c) => c.employees && c.employees.length > 0);
+      const hasAbsentees = rec.absentees && rec.absentees.length > 0;
+      return isNotThisMonth && (hasAssignments || hasAbsentees);
+    });
+  }, [attendanceRecords, selectedMonth, selectedYear]);
 
   // ── Statistics ──────────────────────────────────────────────────────────────
 
@@ -1224,6 +1237,11 @@ export default function AttendanceManager() {
                   icon: <Settings className="w-3.5 h-3.5" />,
                   label: "Settings",
                 },
+                {
+                  value: "backup",
+                  icon: <DatabaseBackup className="w-3.5 h-3.5" />,
+                  label: "Backup",
+                },
               ].map((t) => (
                 <TabsTrigger
                   key={t.value}
@@ -1238,6 +1256,25 @@ export default function AttendanceManager() {
 
             {/* ══ ATTENDANCE TAB ══ */}
             <TabsContent value="attendance">
+              {outdatedRecord && (
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 mb-5 rounded-xl bg-amber-950/20 border border-amber-800/40 text-amber-200 text-xs">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="w-4.5 h-4.5 text-amber-400 shrink-0" />
+                    <span>
+                      The data showing is for <strong>{parseDateLabel(outdatedRecord.date)}</strong>. Make sure you cleared the data before adding attendance.
+                    </span>
+                  </div>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="bg-rose-900/60 hover:bg-rose-700 text-rose-100 border border-rose-800 shrink-0 text-[11px] h-7 px-3"
+                    onClick={() => setClearDialog("attendance")}
+                  >
+                    Clear Attendance Only
+                  </Button>
+                </div>
+              )}
+
               {/* Filters */}
               <div className="flex flex-wrap gap-2 mb-5">
                 <SearchableSelect
@@ -2303,6 +2340,32 @@ export default function AttendanceManager() {
                   ))}
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            {/* ══ BACKUP TAB ══ */}
+            <TabsContent value="backup">
+              <div className="backup-tab-grid">
+                <ExportPanel
+                  onSuccess={(filename) =>
+                    addToast(`Backup downloaded: ${filename}`)
+                  }
+                  onError={(msg) => addToast(msg, "error")}
+                />
+                 <ImportPanel
+                  onSuccess={(sections, payload, approval) => {
+                    if (approval.clients) setClients(payload.sections.clients);
+                    if (approval.employees) setEmployees(payload.sections.employees);
+                    if (approval.attendance) setAttendanceRecords(payload.sections.attendance);
+                    if (approval.borrowings) setBorrowings(payload.sections.borrowings);
+                    if (approval.theme) setTheme(payload.sections.theme as "light" | "dark");
+                    addToast(
+                      `Restored ${sections.length} section${sections.length !== 1 ? "s" : ""} successfully`,
+                      "success",
+                    );
+                  }}
+                  onError={(msg) => addToast(msg, "error")}
+                />
+              </div>
             </TabsContent>
           </Tabs>
         </main>

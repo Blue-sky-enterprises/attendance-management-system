@@ -18,10 +18,17 @@ export function useLocalStorage<T>(
       setStoredValue((prev) => {
         const next =
           typeof value === "function" ? (value as (p: T) => T)(prev) : value;
-        try {
-          window.localStorage.setItem(key, JSON.stringify(next));
-        } catch {
-          console.warn("Failed to save to localStorage");
+        // Only write to localStorage when the value has actually changed.
+        // Reference equality covers the common case where an updater returns
+        // `prev` unchanged (e.g. "if nothing is missing, return prev").
+        // This prevents spurious writes and ensures existing localStorage
+        // data is never overwritten with a default when it hasn't changed.
+        if (next !== prev) {
+          try {
+            window.localStorage.setItem(key, JSON.stringify(next));
+          } catch {
+            console.warn("Failed to save to localStorage");
+          }
         }
         return next;
       });
