@@ -127,6 +127,9 @@ export default function AttendanceManager() {
   }>({ open: false, editing: null });
   const [deleteBorrowingDialog, setDeleteBorrowingDialog] = useState<BorrowingRecord | null>(null);
 
+  const [downloadClientDialog, setDownloadClientDialog] = useState<boolean>(false);
+  const [downloadClientId, setDownloadClientId] = useState<string>("all");
+
   // Form states
   const [clientName, setClientName] = useState("");
   const [employeeName, setEmployeeName] = useState("");
@@ -171,13 +174,32 @@ export default function AttendanceManager() {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
+  const outdatedRecord = useMemo(() => {
+    const currentMonthPrefix = `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}`;
+    return attendanceRecords.find((rec) => {
+      const isNotThisMonth = !rec.date.startsWith(currentMonthPrefix);
+      const hasAssignments = rec.clients.some((c) => c.employees && c.employees.length > 0);
+      const hasAbsentees = rec.absentees && rec.absentees.length > 0;
+      return isNotThisMonth && (hasAssignments || hasAbsentees);
+    });
+  }, [attendanceRecords, selectedMonth, selectedYear]);
+
   // Generate all dates for selected month
   const monthDates = useMemo(() => {
-    const days = getDaysInMonth(selectedYear, selectedMonth);
+    let year = selectedYear;
+    let month = selectedMonth;
+
+    if (outdatedRecord) {
+      const parts = outdatedRecord.date.split("-");
+      year = parseInt(parts[0], 10);
+      month = parseInt(parts[1], 10) - 1;
+    }
+
+    const days = getDaysInMonth(year, month);
     return Array.from({ length: days }, (_, i) =>
-      formatDate(selectedYear, selectedMonth, i + 1),
+      formatDate(year, month, i + 1),
     );
-  }, [selectedYear, selectedMonth]);
+  }, [selectedYear, selectedMonth, outdatedRecord]);
 
   const toggleLock = (date: string) => {
     setLockedDates((prev) => ({
@@ -240,15 +262,6 @@ export default function AttendanceManager() {
     [setAttendanceRecords],
   );
 
-  const outdatedRecord = useMemo(() => {
-    const currentMonthPrefix = `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}`;
-    return attendanceRecords.find((rec) => {
-      const isNotThisMonth = !rec.date.startsWith(currentMonthPrefix);
-      const hasAssignments = rec.clients.some((c) => c.employees && c.employees.length > 0);
-      const hasAbsentees = rec.absentees && rec.absentees.length > 0;
-      return isNotThisMonth && (hasAssignments || hasAbsentees);
-    });
-  }, [attendanceRecords, selectedMonth, selectedYear]);
 
   // ── Statistics ──────────────────────────────────────────────────────────────
 
@@ -1080,6 +1093,108 @@ export default function AttendanceManager() {
     addToast("Excel report downloaded successfully!");
   };
 
+  const downloadClientWiseExcel = () => {
+    const reportDateStr = `${monthName} ${selectedYear}`;
+    const timestamp = new Date().toLocaleString();
+
+    let csvContent = "";
+
+    const escapeCSV = (val: string | number) => {
+      const str = String(val);
+      if (
+        str.includes(",") ||
+        str.includes('"') ||
+        str.includes("\n") ||
+        str.includes("\r")
+      ) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+
+    const addRow = (cells: (string | number)[]) => {
+      csvContent += cells.map(escapeCSV).join(",") + "\n";
+    };
+
+    addRow(["BLUE SKY ENTERPRISES - CLIENT WISE ATTENDANCE REPORT"]);
+    if (downloadClientId !== "all") {
+      const selectedClient = clients.find(c => c.id === downloadClientId);
+      addRow(["Client Name", selectedClient?.name || ""]);
+    }
+    addRow(["Report Month", reportDateStr]);
+    addRow(["Generated On", timestamp]);
+    addRow([]);
+
+    const sortedRecords = [...attendanceRecords].sort((a, b) =>
+      a.date.localeCompare(b.date),
+    );
+
+    const clientsToExport = downloadClientId === "all" ? clients : clients.filter(c => c.id === downloadClientId);
+
+    if (clientsToExport.length === 0) {
+      addRow(["No clients found."]);
+    } else {
+      clientsToExport.forEach((client) => {
+        if (downloadClientId === "all") {
+          addRow([`Client: ${client.name}`]);
+        }
+        addRow(["Date", "Employee Name", "Shift"]);
+        
+        let hasRecords = false;
+
+        sortedRecords.forEach((rec) => {
+          const clientRec = rec.clients.find((c) => c.clientId === client.id);
+          if (clientRec) {
+            clientRec.employees.forEach((emp) => {
+              const empName =
+                employees.find((e) => e.id === emp.employeeId)?.name ??
+                "Unknown Employee";
+              const shiftLabel = emp.shift === "day" ? "Day" : "Night";
+              
+              const [y, m, d] = rec.date.split("-");
+              const formattedDate = `${d}/${m}/${y}`;
+              
+              addRow([
+                formattedDate,
+                empName,
+                shiftLabel,
+              ]);
+              hasRecords = true;
+            });
+          }
+        });
+
+        if (!hasRecords) {
+          addRow(["No assignments for this month", "", ""]);
+        }
+        addRow([]);
+      });
+    }
+
+    const blob = new Blob(["\ufeff" + csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    
+    let filenameClientPart = "All_Clients";
+    if (downloadClientId !== "all") {
+      const selectedClient = clients.find(c => c.id === downloadClientId);
+      if (selectedClient) {
+        filenameClientPart = selectedClient.name.replace(/[^a-z0-9]/gi, '_');
+      }
+    }
+    link.download = `${filenameClientPart}_Attendance_Report_${monthName}_${selectedYear}.csv`;
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    addToast("Client wise report downloaded successfully!");
+    setDownloadClientDialog(false);
+  };
+
   // ── Filtered attendance ─────────────────────────────────────────────────────
 
   const filteredRecords = useMemo(() => {
@@ -1340,6 +1455,7 @@ export default function AttendanceManager() {
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                   {filteredRecords.map((rec) => {
+                    const isLocked = lockedDates[rec.date] && !outdatedRecord;
                     const clientsToShow =
                       filterClient !== "all"
                         ? rec.clients.filter((c) => c.clientId === filterClient)
@@ -1348,7 +1464,7 @@ export default function AttendanceManager() {
                        <Card
                           key={rec.date}
                           className={`group/card relative border transition-all duration-300 rounded-2xl overflow-hidden backdrop-blur-sm ${
-                            lockedDates[rec.date]
+                            isLocked
                               ? "bg-gradient-to-br from-amber-950/40 via-slate-950/80 to-slate-950/90 border-amber-800/40 hover:border-amber-600/60 shadow-lg shadow-amber-950/20"
                               : "bg-gradient-to-br from-slate-900/80 via-slate-950/70 to-slate-950/90 border-sky-900/40 hover:border-sky-500/60 hover:shadow-xl hover:shadow-sky-950/40 hover:-translate-y-0.5"
                           }`}
@@ -1356,7 +1472,7 @@ export default function AttendanceManager() {
                           {/* Accent top border */}
                           <div
                             className={`absolute top-0 left-0 right-0 h-[2px] ${
-                              lockedDates[rec.date]
+                              isLocked
                                 ? "bg-gradient-to-r from-transparent via-amber-600/60 to-transparent"
                                 : "bg-gradient-to-r from-transparent via-sky-500/60 to-transparent"
                             }`}
@@ -1364,14 +1480,14 @@ export default function AttendanceManager() {
 
                           <CardHeader
                             className={`relative group pb-2.5 px-3.5 pt-3 flex flex-row items-center justify-between gap-2 border-b ${
-                              lockedDates[rec.date]
+                              isLocked
                                 ? "bg-gradient-to-r from-amber-950/40 via-amber-950/10 to-transparent border-amber-900/30"
                                 : "bg-gradient-to-r from-sky-950/50 via-sky-950/10 to-transparent border-sky-900/30"
                             }`}
                           >
                             {/* Left: Lock + Date + Locked pill */}
                             <div className="flex items-center gap-2 min-w-0">
-                              {!lockedDates[rec.date] && (
+                              {!isLocked && !outdatedRecord && (
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <Button
@@ -1392,17 +1508,17 @@ export default function AttendanceManager() {
                               <div className="flex items-baseline gap-1.5">
                                 <CardTitle
                                   className={`text-2xl font-bold font-mono leading-none tracking-tight ${
-                                    lockedDates[rec.date]
+                                    isLocked
                                       ? "text-amber-400/80"
                                       : "bg-gradient-to-br from-sky-200 to-sky-400 bg-clip-text text-transparent"
                                   }`}
                                 >
                                   {rec.date.split("-")[2]}
                                 </CardTitle>
-                                {lockedDates[rec.date] && 
+                                {isLocked && 
                                 <span
                                   className={`text-[10px] uppercase tracking-widest font-semibold ${
-                                    lockedDates[rec.date] ? "text-amber-700/60" : "text-sky-700/70"
+                                    isLocked ? "text-amber-700/60" : "text-sky-700/70"
                                   }`}
                                 >
                                   {rec.date.split("-")[1]}
@@ -1413,7 +1529,7 @@ export default function AttendanceManager() {
 
                             {/* Right: Actions (hidden when locked) + Copy */}
                             <div className="flex items-center gap-0.5 shrink-0">
-                              {!lockedDates[rec.date] && (
+                              {!isLocked && !outdatedRecord && (
                                 <>
                                   <Button
                                     size="sm"
@@ -1473,7 +1589,7 @@ export default function AttendanceManager() {
                           </CardHeader>
 
                           {/* Body — collapsed when locked, shows suitcase lock UI */}
-                          {lockedDates[rec.date] ? (
+                          {isLocked ? (
                             <CardContent className="pt-5 pb-5 flex flex-col items-center justify-center gap-3.5">
                               {/* Suitcase lock visual */}
                               <div className="flex flex-col items-center gap-2.5">
@@ -1550,6 +1666,10 @@ export default function AttendanceManager() {
                                                         : "bg-gradient-to-br from-amber-950 to-amber-900/80 text-amber-200 hover:from-amber-900 hover:to-amber-800 border border-amber-700/60 hover:shadow-amber-950/50"
                                                     }`}
                                                     onClick={() => {
+                                                      if (outdatedRecord) {
+                                                        addToast("Clear the data first before modifying attendance.", "error");
+                                                        return;
+                                                      }
                                                       if (rec.date > todayStr) {
                                                         addToast("Cannot modify attendance for future dates", "error");
                                                         return;
@@ -1598,7 +1718,13 @@ export default function AttendanceManager() {
                                             <Badge
                                               key={empId}
                                               className="text-xs px-2 py-0.5 rounded-md bg-gradient-to-br from-rose-950 to-rose-900/80 text-rose-200 border border-rose-800/60 cursor-pointer hover:from-rose-900 hover:to-rose-800 hover:scale-105 hover:shadow-md hover:shadow-rose-950/50 transition-all font-medium"
-                                              onClick={() => removeAbsentee(rec.date, empId)}
+                                              onClick={() => {
+                                                if (outdatedRecord) {
+                                                  addToast("Clear the data first before modifying attendance.", "error");
+                                                  return;
+                                                }
+                                                removeAbsentee(rec.date, empId);
+                                              }}
                                             >
                                               {empName}
                                               <X className="w-2.5 h-2.5 ml-1 opacity-50" />
@@ -1801,6 +1927,27 @@ export default function AttendanceManager() {
                           >
                             <Download className="w-4 h-4" />
                             Download Excel
+                          </Button>
+                        </span>
+                      </TooltipTrigger>
+
+                      {!stats.leaderboard.length && (
+                        <TooltipContent>
+                          <p>Add attendance records to enable export.</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span>
+                          <Button
+                            disabled={!stats.leaderboard.length}
+                            onClick={() => setDownloadClientDialog(true)}
+                            className="bg-purple-600 hover:bg-purple-500 text-white text-xs px-3.5 py-2 h-9 rounded-xl flex items-center gap-1.5 shadow-lg shadow-purple-950/40 border border-purple-500/20 cursor-pointer"
+                          >
+                            <Download className="w-4 h-4" />
+                            Client Excel
                           </Button>
                         </span>
                       </TooltipTrigger>
@@ -2371,6 +2518,47 @@ export default function AttendanceManager() {
         </main>
 
         {/* ══ DIALOGS ══ */}
+
+        {/* Download Client Wise Report Dialog */}
+        <Dialog open={downloadClientDialog} onOpenChange={setDownloadClientDialog}>
+          <DialogContent className="bg-slate-900 border-sky-900/50 text-slate-100 max-w-sm rounded-xl">
+            <DialogHeader>
+              <DialogTitle>Download Client Report</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <label className="text-xs text-slate-400 mb-2 block">
+                Select Client
+              </label>
+              <SearchableSelect
+                value={downloadClientId}
+                onValueChange={setDownloadClientId}
+                options={[
+                  { value: "all", label: "All Clients" },
+                  ...clients.map((c) => ({ value: c.id, label: c.name })),
+                ]}
+                placeholder="Select a client"
+                searchPlaceholder="Search clients…"
+                emptyText="No clients found."
+                className="w-full"
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                variant="ghost"
+                onClick={() => setDownloadClientDialog(false)}
+                className="text-slate-400 hover:text-white"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={downloadClientWiseExcel}
+                className="bg-purple-600 hover:bg-purple-500 text-white"
+              >
+                Download
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Add/Edit Client */}
         <Dialog
