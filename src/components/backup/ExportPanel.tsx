@@ -1,6 +1,7 @@
 // ─── Export Panel ──────────────────────────────────────────────────────────────
 
 import { useState, useId } from "react";
+import { useTranslation } from "react-i18next";
 import { Shield, Download, Eye, EyeOff, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,6 +58,7 @@ interface ExportPanelProps {
 }
 
 export function ExportPanel({ onSuccess, onError }: ExportPanelProps) {
+  const { t } = useTranslation();
   const passwordId = useId();
   const confirmId = useId();
 
@@ -108,10 +110,9 @@ export function ExportPanel({ onSuccess, onError }: ExportPanelProps) {
           <Shield className="w-5 h-5" />
         </div>
         <div>
-          <h3 className="backup-panel__title">Export Encrypted Backup</h3>
+          <h3 className="backup-panel__title">{t('backup.export_panel_title')}</h3>
           <p className="backup-panel__desc">
-            All data is compressed and encrypted with AES-256-GCM before
-            download. The password is never stored.
+            {t('backup.export_panel_desc')}
           </p>
         </div>
       </div>
@@ -121,13 +122,13 @@ export function ExportPanel({ onSuccess, onError }: ExportPanelProps) {
         {/* Password */}
         <div className="backup-field">
           <label htmlFor={passwordId} className="backup-field__label">
-            Encryption Password
+            {t('backup.encryption_password')}
           </label>
           <div className="backup-field__input-wrap">
             <Input
               id={passwordId}
               type={showPw ? "text" : "password"}
-              placeholder="Enter a strong passphrase…"
+              placeholder={t('backup.password_placeholder')}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="backup-input pr-10"
@@ -137,7 +138,7 @@ export function ExportPanel({ onSuccess, onError }: ExportPanelProps) {
               type="button"
               className="backup-field__eye"
               onClick={() => setShowPw((v) => !v)}
-              aria-label={showPw ? "Hide password" : "Show password"}
+              aria-label={showPw ? t('backup.hide_password') : t('backup.show_password')}
             >
               {showPw ? (
                 <EyeOff className="w-4 h-4" />
@@ -149,8 +150,7 @@ export function ExportPanel({ onSuccess, onError }: ExportPanelProps) {
           <PasswordStrengthBar password={password} />
           {passwordTooWeak && (
             <p className="backup-field__error">
-              Password is too weak. Use at least 12 characters with mixed case
-              and symbols.
+              {t('backup.password_too_weak')}
             </p>
           )}
         </div>
@@ -158,13 +158,13 @@ export function ExportPanel({ onSuccess, onError }: ExportPanelProps) {
         {/* Confirm */}
         <div className="backup-field">
           <label htmlFor={confirmId} className="backup-field__label">
-            Confirm Password
+            {t('backup.confirm_password')}
           </label>
           <div className="backup-field__input-wrap">
             <Input
               id={confirmId}
               type={showConfirm ? "text" : "password"}
-              placeholder="Repeat the passphrase…"
+              placeholder={t('backup.confirm_placeholder')}
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               className="backup-input pr-10"
@@ -175,7 +175,7 @@ export function ExportPanel({ onSuccess, onError }: ExportPanelProps) {
               type="button"
               className="backup-field__eye"
               onClick={() => setShowConfirm((v) => !v)}
-              aria-label={showConfirm ? "Hide password" : "Show password"}
+              aria-label={showConfirm ? t('backup.hide_password') : t('backup.show_password')}
             >
               {showConfirm ? (
                 <EyeOff className="w-4 h-4" />
@@ -185,7 +185,7 @@ export function ExportPanel({ onSuccess, onError }: ExportPanelProps) {
             </button>
           </div>
           {passwordMismatch && (
-            <p className="backup-field__error">Passwords do not match.</p>
+            <p className="backup-field__error">{t('backup.passwords_mismatch')}</p>
           )}
         </div>
       </div>
@@ -214,19 +214,19 @@ export function ExportPanel({ onSuccess, onError }: ExportPanelProps) {
         {loading ? (
           <>
             <Loader2 className="w-4 h-4 animate-spin" />
-            Encrypting…
+            {t('backup.encrypting')}
           </>
         ) : (
           <>
             <Download className="w-4 h-4" />
-            Download Encrypted Backup
+            {t('backup.download_encrypted')}
           </>
         )}
       </Button>
 
       {/* Security note */}
       <p className="backup-security-note">
-        🔒 AES-256-GCM · PBKDF2 · 600,000 iterations · Browser-native WebCrypto
+        {t('backup.security_note_export')}
       </p>
     </div>
   );

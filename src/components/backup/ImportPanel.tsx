@@ -22,6 +22,7 @@ import type {
   RestoreApproval,
 } from "@/backup/backupTypes";
 import { SECTION_LABEL } from "@/backup/backupTypes";
+import { useTranslation } from "react-i18next";
 
 // ─── File dropzone ────────────────────────────────────────────────────────────
 
@@ -107,6 +108,7 @@ interface ImportPanelProps {
 
 export function ImportPanel({ onSuccess, onError }: ImportPanelProps) {
   const passwordId = useId();
+  const { t } = useTranslation();
 
   const [file, setFile] = useState<File | null>(null);
   const [password, setPassword] = useState("");
@@ -161,13 +163,13 @@ export function ImportPanel({ onSuccess, onError }: ImportPanelProps) {
       <div className="backup-panel">
         <div className="backup-success">
           <div className="backup-success__icon">✓</div>
-          <h3 className="backup-success__title">Restore Complete</h3>
+          <h3 className="backup-success__title">{t("backup.restore_complete")}</h3>
           <p className="backup-success__desc">
-            Successfully restored:{" "}
+            {t("backup.successfully_restored")}{" "}
             <strong>{restored.map((k) => SECTION_LABEL[k]).join(", ")}</strong>
           </p>
           <p className="backup-success__reload">
-            The page needs to reload to reflect the restored data.
+            {t("backup.page_needs_reload")}
           </p>
           <div className="flex gap-3 justify-center flex-wrap mt-2">
             <Button
@@ -175,14 +177,14 @@ export function ImportPanel({ onSuccess, onError }: ImportPanelProps) {
               className="backup-btn backup-btn--primary"
               onClick={() => window.location.reload()}
             >
-              Reload Now
+              {t("backup.reload_now")}
             </Button>
             <Button
               variant="ghost"
               className="backup-btn backup-btn--ghost"
               onClick={handleReset}
             >
-              Import Another
+              {t("backup.import_another")}
             </Button>
           </div>
         </div>
@@ -210,17 +212,15 @@ export function ImportPanel({ onSuccess, onError }: ImportPanelProps) {
           <Upload className="w-5 h-5" />
         </div>
         <div>
-          <h3 className="backup-panel__title">Import & Restore Backup</h3>
+          <h3 className="backup-panel__title">{t("backup.import_panel_title")}</h3>
           <p className="backup-panel__desc">
-            Upload a <code>.json</code> backup file and enter the password used
-            during export. Data is previewed before anything is written.
+            {t("backup.import_panel_desc")}
           </p>
         </div>
       </div>
 
       {/* Fields */}
       <div className="backup-panel__fields">
-        {/* Dropzone */}
         <Dropzone
           file={file}
           onFile={setFile}
@@ -230,13 +230,13 @@ export function ImportPanel({ onSuccess, onError }: ImportPanelProps) {
         {/* Password */}
         <div className="backup-field">
           <label htmlFor={passwordId} className="backup-field__label">
-            Backup Password
+            {t("backup.backup_password")}
           </label>
           <div className="backup-field__input-wrap">
             <Input
               id={passwordId}
               type={showPw ? "text" : "password"}
-              placeholder="Enter the backup password…"
+              placeholder={t("backup.backup_password_placeholder")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="backup-input pr-10"
@@ -247,13 +247,9 @@ export function ImportPanel({ onSuccess, onError }: ImportPanelProps) {
               type="button"
               className="backup-field__eye"
               onClick={() => setShowPw((v) => !v)}
-              aria-label={showPw ? "Hide password" : "Show password"}
+              aria-label={showPw ? t("backup.hide_password") : t("backup.show_password")}
             >
-              {showPw ? (
-                <EyeOff className="w-4 h-4" />
-              ) : (
-                <Eye className="w-4 h-4" />
-              )}
+              {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
         </div>
@@ -277,18 +273,18 @@ export function ImportPanel({ onSuccess, onError }: ImportPanelProps) {
         {loading ? (
           <>
             <Loader2 className="w-4 h-4 animate-spin" />
-            Decrypting…
+            {t("backup.decrypting")}
           </>
         ) : (
           <>
             <Eye className="w-4 h-4" />
-            Decrypt & Preview
+            {t("backup.decrypt_preview")}
           </>
         )}
       </Button>
 
       <p className="backup-security-note">
-        🔒 Data is never written to storage until you approve the preview.
+        {t("backup.security_note_import")}
       </p>
     </div>
   );

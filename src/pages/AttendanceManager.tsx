@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,6 +73,7 @@ import { ImportPanel } from "@/components/backup/ImportPanel";
 
 
 export default function AttendanceManager() {
+  const { t, i18n } = useTranslation();
   const { setTheme } = useTheme();
   const now = new Date();
   const selectedMonth = now.getMonth();
@@ -1274,26 +1276,26 @@ export default function AttendanceManager() {
                 const { greet, emoji, sub } =
                   h < 12
                     ? {
-                        greet: "Good Morning",
+                        greet: t('app.greet_morning'),
                         emoji: "☀️",
-                        sub: "Have a productive day",
+                        sub: t('app.greet_morning_sub'),
                       }
                     : h < 17
                       ? {
-                          greet: "Good Afternoon",
+                          greet: t('app.greet_afternoon'),
                           emoji: "🌤️",
-                          sub: "Keep the momentum going",
+                          sub: t('app.greet_afternoon_sub'),
                         }
                       : h < 21
                         ? {
-                            greet: "Good Evening",
+                            greet: t('app.greet_evening'),
                             emoji: "🌆",
-                            sub: "Wrapping up strong",
+                            sub: t('app.greet_evening_sub'),
                           }
                         : {
-                            greet: "Good Night",
+                            greet: t('app.greet_night'),
                             emoji: "🌙",
-                            sub: "Burning the midnight oil",
+                            sub: t('app.greet_night_sub'),
                           };
                 return (
                   <div
@@ -1311,6 +1313,34 @@ export default function AttendanceManager() {
                 {monthName} {selectedYear}
               </span>
 
+              {/* Language Switcher */}
+              <div className="flex items-center gap-1 bg-slate-950/60 p-0.5 rounded-lg border border-sky-900/40 shrink-0">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => i18n.changeLanguage('en')}
+                  className={`h-7 px-2.5 text-[11px] font-semibold rounded-md transition-all ${
+                    i18n.language.startsWith('en') 
+                      ? 'bg-gradient-to-br from-sky-500/20 to-blue-500/20 text-sky-300 shadow-sm' 
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                  }`}
+                >
+                  EN
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => i18n.changeLanguage('ml')}
+                  className={`h-7 px-2.5 text-[11px] font-semibold rounded-md transition-all ${
+                    i18n.language.startsWith('ml') 
+                      ? 'bg-gradient-to-br from-sky-500/20 to-blue-500/20 text-sky-300 shadow-sm' 
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                  }`}
+                >
+                  ML
+                </Button>
+              </div>
+
               {/* Theme Toggle */}
               <ThemeToggle />
             </div>
@@ -1325,37 +1355,32 @@ export default function AttendanceManager() {
                 {
                   value: "attendance",
                   icon: <CalendarDays className="w-3.5 h-3.5" />,
-                  label: "Attendance",
+                  label: t('tabs.attendance'),
                 },
                 {
                   value: "clients",
                   icon: <Building2 className="w-3.5 h-3.5" />,
-                  label: "Clients",
+                  label: t('tabs.clients'),
                 },
                 {
                   value: "employees",
                   icon: <Users className="w-3.5 h-3.5" />,
-                  label: "Employees",
+                  label: t('tabs.employees'),
+                },
+                {
+                  value: "borrowings",
+                  icon: <Wallet className="w-3.5 h-3.5" />,
+                  label: t('tabs.borrowings'),
                 },
                 {
                   value: "analytics",
                   icon: <BarChart3 className="w-3.5 h-3.5" />,
-                  label: "Analytics",
-                },
-                {
-                  value: "fines",
-                  icon: <Wallet className="w-3.5 h-3.5" />,
-                  label: "Fines & Borrowings",
-                },
-                {
-                  value: "settings",
-                  icon: <Settings className="w-3.5 h-3.5" />,
-                  label: "Settings",
+                  label: t('tabs.analytics'),
                 },
                 {
                   value: "backup",
                   icon: <DatabaseBackup className="w-3.5 h-3.5" />,
-                  label: "Backup",
+                  label: t('tabs.backup'),
                 },
               ].map((t) => (
                 <TabsTrigger
@@ -1376,7 +1401,7 @@ export default function AttendanceManager() {
                   <div className="flex items-center gap-2">
                     <AlertTriangle className="w-4.5 h-4.5 text-amber-400 shrink-0" />
                     <span>
-                      The data showing is for <strong>{parseDateLabel(outdatedRecord.date)}</strong>. Make sure you cleared the data before adding attendance.
+                      {t('attendance.outdated_warning').replace('{{date}}', parseDateLabel(outdatedRecord.date))}
                     </span>
                   </div>
                   <Button
@@ -1385,7 +1410,7 @@ export default function AttendanceManager() {
                     className="bg-rose-900/60 hover:bg-rose-700 text-rose-100 border border-rose-800 shrink-0 text-[11px] h-7 px-3"
                     onClick={() => setClearDialog("attendance")}
                   >
-                    Clear Attendance Only
+                    {t('attendance.clear_attendance')}
                   </Button>
                 </div>
               )}
@@ -1628,7 +1653,7 @@ export default function AttendanceManager() {
                             <CardContent className="space-y-3 pt-3.5 px-3.5 pb-3.5">
                               {clientsToShow.length === 0 && rec.absentees.length === 0 ? (
                                 <div className="flex items-center justify-center py-4">
-                                  <p className="text-xs text-slate-600 italic">No records for this day</p>
+                                  <p className="text-xs text-slate-600 italic">{t('attendance.no_records')}</p>
                                 </div>
                               ) : (
                                 <>
@@ -1646,12 +1671,12 @@ export default function AttendanceManager() {
                                     if (shiftFiltered.length === 0) return null;
                                     return (
                                       <div key={cl.clientId} className="rounded-lg bg-slate-900/40 border border-sky-900/20 p-2 hover:border-sky-800/40 transition-colors">
-                                        <p className="text-xs font-semibold text-slate-200 flex items-center gap-1.5 mb-2">
+                                        <div className="text-xs font-semibold text-slate-200 flex items-center gap-1.5 mb-2">
                                           <div className="p-0.5 rounded bg-sky-950/60">
                                             <Building2 className="w-3 h-3 text-sky-400" />
                                           </div>
                                           <span className="truncate">{clientName}</span>
-                                        </p>
+                                        </div>
                                         <div className="flex flex-wrap gap-1.5">
                                           {shiftFiltered.map((emp) => {
                                             const empName =
@@ -1704,12 +1729,12 @@ export default function AttendanceManager() {
 
                                   {rec.absentees.length > 0 && (
                                     <div className="rounded-lg bg-rose-950/10 border border-rose-900/20 p-2">
-                                      <p className="text-xs font-semibold text-rose-400 flex items-center gap-1.5 mb-2">
+                                      <div className="text-xs font-semibold text-rose-400 flex items-center gap-1.5 mb-2">
                                         <div className="p-0.5 rounded bg-rose-950/60">
                                           <UserX className="w-3 h-3" />
                                         </div>
                                         Absentees
-                                      </p>
+                                      </div>
                                       <div className="flex flex-wrap gap-1.5">
                                         {rec.absentees.map((empId) => {
                                           const empName =
@@ -1763,7 +1788,7 @@ export default function AttendanceManager() {
                   className="bg-gradient-to-r from-sky-500 to-blue-700 hover:from-sky-400 hover:to-blue-600 text-white h-9 shadow-md shadow-blue-950/40 rounded-lg"
                   onClick={openAddClient}
                 >
-                  <Plus className="w-4 h-4 mr-1" /> Add Client
+                  <Plus className="w-4 h-4 mr-1" /> {t('clients.add_client')}
                 </Button>
               </div>
               {filteredClients.length === 0 ? (
@@ -1827,7 +1852,7 @@ export default function AttendanceManager() {
                   className="bg-gradient-to-r from-sky-500 to-blue-700 hover:from-sky-400 hover:to-blue-600 text-white h-9 shadow-md shadow-blue-950/40 rounded-lg"
                   onClick={openAddEmployee}
                 >
-                  <Plus className="w-4 h-4 mr-1" /> Add Employee
+                  <Plus className="w-4 h-4 mr-1" /> {t('employees.add_employee')}
                 </Button>
               </div>
               {filteredEmployees.length === 0 ? (
@@ -1888,10 +1913,10 @@ export default function AttendanceManager() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
                 <div>
                   <h2 className="text-base font-semibold text-slate-200">
-                    Monthly Analytics
+                    {t('analytics.title')}
                   </h2>
                   <p className="text-xs text-slate-500">
-                    Summary stats and performance leaderboard
+                    {t('analytics.subtitle')}
                   </p>
                 </div>
                 <TooltipProvider>
@@ -1905,14 +1930,14 @@ export default function AttendanceManager() {
                             className="bg-slate-900 hover:bg-slate-800 text-slate-200 text-xs px-3.5 py-2 h-9 rounded-xl flex items-center gap-1.5 border border-sky-900/40 shadow-md cursor-pointer"
                           >
                             <Download className="w-4 h-4 text-sky-400" />
-                            Download TXT
+                            {t('analytics.download_txt')}
                           </Button>
                         </span>
                       </TooltipTrigger>
 
                       {!stats.leaderboard.length && (
                         <TooltipContent>
-                          <p>Add attendance records to enable export.</p>
+                          <p>{t('analytics.add_records_to_export')}</p>
                         </TooltipContent>
                       )}
                     </Tooltip>
@@ -1926,14 +1951,14 @@ export default function AttendanceManager() {
                             className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3.5 py-2 h-9 rounded-xl flex items-center gap-1.5 shadow-lg shadow-emerald-950/40 border border-emerald-500/20 cursor-pointer"
                           >
                             <Download className="w-4 h-4" />
-                            Download Excel
+                            {t('analytics.download_excel')}
                           </Button>
                         </span>
                       </TooltipTrigger>
 
                       {!stats.leaderboard.length && (
                         <TooltipContent>
-                          <p>Add attendance records to enable export.</p>
+                          <p>{t('analytics.add_records_to_export')}</p>
                         </TooltipContent>
                       )}
                     </Tooltip>
@@ -1947,14 +1972,14 @@ export default function AttendanceManager() {
                             className="bg-purple-600 hover:bg-purple-500 text-white text-xs px-3.5 py-2 h-9 rounded-xl flex items-center gap-1.5 shadow-lg shadow-purple-950/40 border border-purple-500/20 cursor-pointer"
                           >
                             <Download className="w-4 h-4" />
-                            Client Excel
+                            {t('analytics.client_excel')}
                           </Button>
                         </span>
                       </TooltipTrigger>
 
                       {!stats.leaderboard.length && (
                         <TooltipContent>
-                          <p>Add attendance records to enable export.</p>
+                          <p>{t('analytics.add_records_to_export')}</p>
                         </TooltipContent>
                       )}
                     </Tooltip>
@@ -1964,28 +1989,28 @@ export default function AttendanceManager() {
               <div className="grid gap-4 grid-cols-2 lg:grid-cols-4 mb-6">
                 {[
                   {
-                    label: "Total Clients",
+                    label: t('analytics.total_clients'),
                     value: stats.totalClients,
                     icon: <Building2 className="w-5 h-5" />,
                     color: "text-sky-400",
                     glow: "from-sky-500/10",
                   },
                   {
-                    label: "Total Employees",
+                    label: t('analytics.total_employees'),
                     value: stats.totalEmployees,
                     icon: <Users className="w-5 h-5" />,
                     color: "text-blue-400",
                     glow: "from-blue-500/10",
                   },
                   {
-                    label: "Total Duties",
+                    label: t('analytics.total_duties'),
                     value: stats.totalDuties,
                     icon: <Briefcase className="w-5 h-5" />,
                     color: "text-emerald-400",
                     glow: "from-emerald-500/10",
                   },
                   {
-                    label: "Total Absentees",
+                    label: t('analytics.total_absences'),
                     value: stats.totalAbsentees,
                     icon: <UserX className="w-5 h-5" />,
                     color: "text-rose-400",
@@ -2011,12 +2036,12 @@ export default function AttendanceManager() {
                   <Card className="bg-gradient-to-br from-orange-500/10 to-slate-950/60 border-orange-900/40 px-5 py-4 rounded-xl hover:border-orange-600/60 transition-colors">
                     <div className="text-orange-400 mb-2"><TrendingDown className="w-5 h-5" /></div>
                     <p className="text-3xl font-bold text-white tabular-nums">₹{borrowingStats.totalOutstanding.toLocaleString("en-IN")}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">Outstanding Balance</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{t('analytics.outstanding_balance')}</p>
                   </Card>
                   <Card className="bg-gradient-to-br from-red-500/10 to-slate-950/60 border-red-900/40 px-5 py-4 rounded-xl hover:border-red-600/60 transition-colors">
                     <div className="text-red-400 mb-2"><Receipt className="w-5 h-5" /></div>
                     <p className="text-3xl font-bold text-white tabular-nums">₹{borrowingStats.totalFines.toLocaleString("en-IN")}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">Total Fines Issued</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{t('analytics.total_fines')}</p>
                   </Card>
                 </div>
               )}
@@ -2029,13 +2054,13 @@ export default function AttendanceManager() {
                     </div>
                     <div>
                       <p className="text-[10px] text-amber-500 uppercase tracking-[0.18em] font-semibold">
-                        Top Performer
+                        {t('analytics.top_performer')}
                       </p>
                       <p className="text-xl font-bold text-amber-100">
                         {stats.topEmployee.name}
                       </p>
                       <p className="text-sm text-amber-400">
-                        {stats.topEmployee.count} duties
+                        {stats.topEmployee.count} {t('analytics.duties')}
                       </p>
                     </div>
                   </div>
@@ -2046,13 +2071,13 @@ export default function AttendanceManager() {
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm text-slate-300 flex items-center gap-2">
                     <Trophy className="w-4 h-4 text-amber-400" />
-                    Duty Leaderboard
+                    {t('analytics.duty_leaderboard')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {stats.leaderboard.length === 0 ? (
                     <p className="text-sm text-slate-600">
-                      No duties assigned yet.
+                      {t('analytics.no_duties_yet')}
                     </p>
                   ) : (
                     <ScrollArea className="h-[28rem]">
@@ -2130,7 +2155,7 @@ export default function AttendanceManager() {
                                     {l.count}
                                   </span>
                                   <span className="text-[10px] uppercase tracking-wider text-slate-500">
-                                    duties
+                                    {t('analytics.duties')}
                                   </span>
                                 </div>
 
@@ -2171,7 +2196,7 @@ export default function AttendanceManager() {
                                     ) : (
                                       <p className="mt-2 text-[11px] italic text-slate-600 flex items-center gap-1.5">
                                         <Info className="h-3 w-3" />
-                                        No client assignments
+                                        {t('analytics.no_client_assignments')}
                                       </p>
                                     )}
                                   </div>
