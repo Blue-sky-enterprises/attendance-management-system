@@ -1233,107 +1233,188 @@ export default function AttendanceManager() {
     <TooltipProvider>
       <div className="app-shell min-h-screen w-full bg-gradient-to-br from-[#06101f] via-[#081428] to-[#0a1a36] text-slate-100 font-sans">
         {/* ── Header ── */}
-        <header className="sticky top-0 z-40 border-b border-sky-900/30 bg-[#06101f]/85 backdrop-blur-xl">
-          <div className="w-full px-4 sm:px-6 lg:px-10 h-12 flex items-center justify-between gap-4">
-            {/* Left: Logo + Brand inline */}
-            <div className="flex items-center gap-2 min-w-0">
-              <img
-                src="/logo-no-bg.png"
-                alt="Blue Sky Enterprises"
-                className="w-7 h-7 object-contain shrink-0 drop-shadow-[0_0_6px_rgba(56,189,248,0.4)]"
-              />
-              <span className="text-sm font-semibold tracking-tight text-white truncate">
-                Blue Sky Enterprises
-              </span>
-              <span className="hidden sm:inline text-slate-600">·</span>
-              <span className="hidden sm:inline text-[11px] text-slate-400 font-medium truncate">
-                Attendance Monitor
-              </span>
-            </div>
+       <header
+  className="sticky top-0 z-40 backdrop-blur-xl"
+  style={{
+    background: "var(--surface-header)",
+    borderBottom: "1px solid var(--border-default)",
+  }}
+>
+  <div className="w-full px-4 sm:px-6 lg:px-10 h-12 flex items-center justify-between gap-4">
+    {/* Left: Logo + Brand */}
+    <div className="flex items-center gap-2 min-w-0">
+      <img
+        src="/logo-no-bg.png"
+        alt="Blue Sky Enterprises"
+        className="w-7 h-7 object-contain shrink-0"
+        style={{
+          filter: "drop-shadow(0 0 8px var(--accent-glow))",
+        }}
+      />
 
-            {/* Right: Greeting + Month + Theme */}
-            <div className="flex items-center gap-2 shrink-0">
-              {(() => {
-                const h = new Date().getHours();
-                const { greet, emoji, sub } =
-                  h < 12
-                    ? {
-                        greet: t('app.greet_morning'),
-                        emoji: "☀️",
-                        sub: t('app.greet_morning_sub'),
-                      }
-                    : h < 17
-                      ? {
-                          greet: t('app.greet_afternoon'),
-                          emoji: "🌤️",
-                          sub: t('app.greet_afternoon_sub'),
-                        }
-                      : h < 21
-                        ? {
-                            greet: t('app.greet_evening'),
-                            emoji: "🌆",
-                            sub: t('app.greet_evening_sub'),
-                          }
-                        : {
-                            greet: t('app.greet_night'),
-                            emoji: "🌙",
-                            sub: t('app.greet_night_sub'),
-                          };
-                return (
-                  <div
-                    className="flex items-center gap-2 px-2.5 h-8 rounded-lg bg-gradient-to-r from-sky-500/10 to-blue-500/10 border border-sky-500/20"
-                    title={sub}
-                  >
-                    <span className="text-sm leading-none">{emoji}</span>
-                    <span className="text-[11px] font-semibold text-sky-200 leading-none">
-                      {greet}
-                    </span>
-                  </div>
-                );
-              })()}
-              <span className="hidden md:inline text-[11px] text-slate-300 font-medium tabular-nums px-2 h-8 leading-8 rounded-md bg-sky-950/40 border border-sky-900/40">
-                {monthName} {selectedYear}
-              </span>
+      <span
+        className="text-sm font-semibold tracking-tight truncate"
+        style={{ color: "var(--text-heading)" }}
+      >
+        Blue Sky Enterprises
+      </span>
 
-              {/* Language Switcher */}
-              <div className="flex items-center gap-1 bg-slate-950/60 p-0.5 rounded-lg border border-sky-900/40 shrink-0">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => i18n.changeLanguage('en')}
-                  className={`h-7 px-2.5 text-[11px] font-semibold rounded-md transition-all ${
-                    i18n.language.startsWith('en') 
-                      ? 'bg-gradient-to-br from-sky-500/20 to-blue-500/20 text-sky-300 shadow-sm' 
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
-                  }`}
-                >
-                  EN
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => i18n.changeLanguage('ml')}
-                  className={`h-7 px-2.5 text-[11px] font-semibold rounded-md transition-all ${
-                    i18n.language.startsWith('ml') 
-                      ? 'bg-gradient-to-br from-sky-500/20 to-blue-500/20 text-sky-300 shadow-sm' 
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
-                  }`}
-                >
-                  ML
-                </Button>
-              </div>
+      <span
+        className="hidden sm:inline"
+        style={{ color: "var(--text-muted)" }}
+      >
+        ·
+      </span>
 
-              {/* Theme Toggle */}
-              <ThemeToggle />
-            </div>
+      <span
+        className="hidden sm:inline text-[11px] font-medium truncate"
+        style={{ color: "var(--text-secondary)" }}
+      >
+        Attendance Monitor
+      </span>
+    </div>
+
+    {/* Right */}
+    <div className="flex items-center gap-2 shrink-0">
+      {(() => {
+        const h = new Date().getHours();
+
+        const { greet, emoji, sub } =
+          h < 12
+            ? {
+                greet: t("app.greet_morning"),
+                emoji: "☀️",
+                sub: t("app.greet_morning_sub"),
+              }
+            : h < 17
+            ? {
+                greet: t("app.greet_afternoon"),
+                emoji: "🌤️",
+                sub: t("app.greet_afternoon_sub"),
+              }
+            : h < 21
+            ? {
+                greet: t("app.greet_evening"),
+                emoji: "🌆",
+                sub: t("app.greet_evening_sub"),
+              }
+            : {
+                greet: t("app.greet_night"),
+                emoji: "🌙",
+                sub: t("app.greet_night_sub"),
+              };
+
+        return (
+          <div
+            className="flex items-center gap-2 px-2.5 h-8 rounded-lg"
+            title={sub}
+            style={{
+              background:
+                "linear-gradient(135deg, var(--accent-glow), rgba(64,138,113,.15))",
+              border: "1px solid var(--border-accent)",
+            }}
+          >
+            <span className="text-sm leading-none">{emoji}</span>
+
+            <span
+              className="text-[11px] font-semibold leading-none"
+              style={{ color: "var(--accent-400)" }}
+            >
+              {greet}
+            </span>
           </div>
-        </header>
+        );
+      })()}
+
+      <span
+        className="hidden md:inline text-[11px] font-medium tabular-nums px-2 h-8 leading-8 rounded-md"
+        style={{
+          color: "var(--text-primary)",
+          background: "var(--surface-2)",
+          border: "1px solid var(--border-default)",
+        }}
+      >
+        {monthName} {selectedYear}
+      </span>
+
+      {/* Language Switcher */}
+      <div
+        className="flex items-center gap-1 p-0.5 rounded-lg shrink-0"
+        style={{
+          background: "var(--surface-2)",
+          border: "1px solid var(--border-default)",
+        }}
+      >
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => i18n.changeLanguage("en")}
+          className="h-7 px-2.5 text-[11px] font-semibold rounded-md transition-all"
+          style={
+            i18n.language.startsWith("en")
+              ? {
+                  background:
+                    "linear-gradient(135deg,var(--accent-500),var(--accent-600))",
+                  color: "#fff",
+                  boxShadow: "0 4px 12px var(--accent-glow)",
+                }
+              : {
+                  color: "var(--text-secondary)",
+                }
+          }
+        >
+          EN
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => i18n.changeLanguage("ml")}
+          className="h-7 px-2.5 text-[11px] font-semibold rounded-md transition-all"
+          style={
+            i18n.language.startsWith("ml")
+              ? {
+                  background:
+                    "linear-gradient(135deg,var(--accent-500),var(--accent-600))",
+                  color: "#fff",
+                  boxShadow: "0 4px 12px var(--accent-glow)",
+                }
+              : {
+                  color: "var(--text-secondary)",
+                }
+          }
+        >
+          ML
+        </Button>
+      </div>
+
+      {/* Theme Toggle */}
+      <ThemeToggle />
+    </div>
+  </div>
+</header>
 
         {/* ── Main Content ── */}
         <main className="w-full px-4 sm:px-6 lg:px-10 py-6">
           <Tabs defaultValue="attendance" className="w-full">
-            <TabsList className="bg-slate-950/60 border border-sky-900/40 mb-6 flex-wrap h-auto gap-1 p-1 w-full sm:w-auto justify-start rounded-xl">
-              {[
+<TabsList
+  className="
+    mb-6
+    flex-wrap
+    h-auto
+    gap-1
+    p-1
+    w-full
+    sm:w-auto
+    justify-start
+    rounded-xl
+    bg-[var(--surface-card)]
+    backdrop-blur-md
+    border
+    border-[var(--border-default)]
+    shadow-md
+  "
+>              {[
                 {
                   value: "attendance",
                   icon: <CalendarDays className="w-3.5 h-3.5" />,
@@ -1368,7 +1449,18 @@ export default function AttendanceManager() {
                 <TabsTrigger
                   key={t.value}
                   value={t.value}
-                  className="data-[state=active]:bg-gradient-to-br data-[state=active]:from-sky-500 data-[state=active]:to-blue-700 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=active]:shadow-blue-900/40 text-slate-400 flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-all"
+                  className="
+                    flex items-center gap-1.5
+                    text-xs px-3 py-1.5 rounded-lg transition-all
+                    text-[var(--text-secondary)]
+                    hover:text-[var(--text-primary)]
+                    data-[state=active]:bg-gradient-to-br
+                    data-[state=active]:from-[var(--accent-500)]
+                    data-[state=active]:to-[var(--accent-600)]
+                    data-[state=active]:text-white
+                    data-[state=active]:shadow-md
+                    data-[state=active]:shadow-[var(--accent-glow)]
+                  "
                 >
                   {t.icon}
                   {t.label}
@@ -1469,30 +1561,24 @@ export default function AttendanceManager() {
                         ? rec.clients.filter((c) => c.clientId === filterClient)
                         : rec.clients;
                     return (
-                       <Card
-                          key={rec.date}
-                          className={`group/card relative border transition-all duration-300 rounded-2xl overflow-hidden backdrop-blur-sm ${
-                            isLocked
-                              ? "bg-gradient-to-br from-amber-950/40 via-slate-950/80 to-slate-950/90 border-amber-800/40 hover:border-amber-600/60 shadow-lg shadow-amber-950/20"
-                              : "bg-gradient-to-br from-slate-900/80 via-slate-950/70 to-slate-950/90 border-sky-900/40 hover:border-sky-500/60 hover:shadow-xl hover:shadow-sky-950/40 hover:-translate-y-0.5"
-                          }`}
-                        >
-                          {/* Accent top border */}
-                          <div
-                            className={`absolute top-0 left-0 right-0 h-[2px] ${
-                              isLocked
-                                ? "bg-gradient-to-r from-transparent via-amber-600/60 to-transparent"
-                                : "bg-gradient-to-r from-transparent via-sky-500/60 to-transparent"
-                            }`}
-                          />
-
-                          <CardHeader
-                            className={`relative group pb-2.5 px-3.5 pt-3 flex flex-row items-center justify-between gap-2 border-b ${
-                              isLocked
-                                ? "bg-gradient-to-r from-amber-950/40 via-amber-950/10 to-transparent border-amber-900/30"
-                                : "bg-gradient-to-r from-sky-950/50 via-sky-950/10 to-transparent border-sky-900/30"
+                          <Card
+                            key={rec.date}
+                            className={`group/card relative border transition-all duration-300 rounded-2xl overflow-hidden ${
+                              isLocked ? "attendance-card-locked" : "attendance-card"
                             }`}
                           >
+                            {/* Accent top border */}
+                            <div
+                              className={`absolute top-0 left-0 right-0 h-[2px] ${
+                                isLocked ? "attendance-card-locked-top-accent" : "attendance-card-top-accent"
+                              }`}
+                            />
+
+                            <CardHeader
+                              className={`relative group pb-2.5 px-3.5 pt-3 flex flex-row items-center justify-between gap-2 ${
+                                isLocked ? "attendance-card-locked-header" : "attendance-card-header"
+                              }`}
+                            >
                             {/* Left: Lock + Date + Locked pill */}
                             <div className="flex items-center gap-2 min-w-0">
                               {!isLocked && !outdatedRecord && (
@@ -1501,7 +1587,7 @@ export default function AttendanceManager() {
                                     <Button
                                       size="icon"
                                       variant="ghost"
-                                      className="h-7 w-7 rounded-lg shrink-0 text-slate-500 hover:text-amber-400 hover:bg-amber-950/50 transition-all duration-200 hover:scale-110"
+                                      className="h-7 w-7 rounded-lg shrink-0 text-[var(--indigo-400)] hover:text-[var(--indigo-500)] hover:bg-[var(--accent-glow)] transition-all duration-200 hover:scale-110"
                                       onClick={() => toggleLock(rec.date)}
                                     >
                                       <LockOpen className="w-3.5 h-3.5" />
@@ -1517,17 +1603,15 @@ export default function AttendanceManager() {
                                 <CardTitle
                                   className={`text-2xl font-bold font-mono leading-none tracking-tight ${
                                     isLocked
-                                      ? "text-amber-400/80"
-                                      : "bg-gradient-to-br from-sky-200 to-sky-400 bg-clip-text text-transparent"
+                                      ? "text-[var(--accent-500)]"
+                                      : "text-[var(--indigo-500)]"
                                   }`}
                                 >
                                   {rec.date.split("-")[2]}
                                 </CardTitle>
                                 {isLocked && 
                                 <span
-                                  className={`text-[10px] uppercase tracking-widest font-semibold ${
-                                    isLocked ? "text-amber-700/60" : "text-sky-700/70"
-                                  }`}
+                                  className={`text-[10px] uppercase tracking-widest font-semibold text-[var(--accent-400)]`}
                                 >
                                   {rec.date.split("-")[1]}
                                 </span>
@@ -1540,20 +1624,33 @@ export default function AttendanceManager() {
                               {!isLocked && !outdatedRecord && (
                                 <>
 
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      className="h-7 text-xs px-2.5 rounded-lg transition-all text-sky-400 hover:text-sky-200 hover:bg-sky-950/60 hover:shadow-sm hover:shadow-sky-950/50 font-medium"
-                                      onClick={() => {
-                                        if (rec.date > todayStr) {
-                                          addToast("Cannot edit attendance for future dates", "error");
-                                          return;
-                                        }
-                                        setEditDayDialog(rec.date);
-                                      }}
-                                    >
-                                      <Edit2 className="w-3 h-3 mr-0.5" /> Manage
-                                    </Button>
+                                  <Button
+  size="sm"
+  variant="ghost"
+  className="
+    h-7
+    px-2.5
+    rounded-lg
+    text-xs
+    font-medium
+    transition-all
+    text-[var(--accent-500)]
+    hover:bg-[var(--accent-glow)]
+    hover:text-[var(--accent-400)]
+    hover:border
+    hover:border-[var(--border-accent)]
+  "
+  onClick={() => {
+    if (rec.date > todayStr) {
+      addToast("Cannot edit attendance for future dates", "error");
+      return;
+    }
+    setEditDayDialog(rec.date);
+  }}
+>
+  <Edit2 className="w-3 h-3 mr-0.5" />
+  Manage
+</Button>
 
                                   <div className="w-px h-5 bg-gradient-to-b from-transparent via-sky-800/50 to-transparent mx-1" />
                                 </>
@@ -1601,15 +1698,13 @@ export default function AttendanceManager() {
                             <CardContent className="pt-5 pb-5 flex flex-col items-center justify-center gap-3.5">
                               {/* Suitcase lock visual */}
                               <div className="flex flex-col items-center gap-2.5">
-                                <div className="relative flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-950/70 to-amber-950/30 border border-amber-800/50 shadow-inner shadow-amber-950/50">
+                                <div className="relative flex items-center justify-center w-14 h-14 rounded-2xl attendance-lock-icon">
                                   {/* Lock shackle (top arc) */}
-                                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-6 h-3.5 rounded-t-full border-[2.5px] border-amber-700/70 border-b-0" />
+                                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-6 h-3.5 rounded-t-full border-[2.5px] border-[var(--border-accent)] border-b-0" />
                                   {/* Lock body icon */}
-                                  <Lock className="w-6 h-6 text-amber-500/90 drop-shadow-[0_0_8px_rgba(245,158,11,0.3)]" />
-                                  {/* Subtle glow */}
-                                  <div className="absolute inset-0 rounded-2xl bg-amber-500/5 blur-md -z-10" />
+                                  <Lock className="w-6 h-6 text-[var(--accent-500)] drop-shadow-md" />
                                 </div>
-                                <p className="text-[11px] text-amber-600/80 font-semibold tracking-wider uppercase">
+                                <p className="text-[11px] text-[var(--text-secondary)] font-semibold tracking-wider uppercase">
                                   Date is locked
                                 </p>
                               </div>
@@ -1620,7 +1715,7 @@ export default function AttendanceManager() {
                                   <Button
                                     size="sm"
                                     variant="ghost"
-                                    className="h-8 text-xs px-3.5 rounded-lg border border-amber-800/50 bg-gradient-to-b from-amber-950/40 to-amber-950/20 text-amber-300 hover:text-amber-100 hover:bg-amber-900/50 hover:border-amber-600/70 hover:shadow-md hover:shadow-amber-950/40 transition-all gap-1.5 font-medium"
+                                    className="h-8 text-xs px-3.5 rounded-lg attendance-unlock-btn transition-all gap-1.5 font-medium"
                                     onClick={() => toggleLock(rec.date)}
                                   >
                                     <LockOpen className="w-3.5 h-3.5" />
@@ -1636,7 +1731,7 @@ export default function AttendanceManager() {
                             <CardContent className="space-y-3 pt-3.5 px-3.5 pb-3.5">
                               {clientsToShow.length === 0 && rec.absentees.length === 0 ? (
                                 <div className="flex items-center justify-center py-4">
-                                  <p className="text-xs text-slate-600 italic">{t('attendance.no_records')}</p>
+                                  <p className="text-xs text-[var(--text-muted)] italic">{t('attendance.no_records')}</p>
                                 </div>
                               ) : (
                                 <>
@@ -1653,10 +1748,10 @@ export default function AttendanceManager() {
                                         : empsToShow;
                                     if (shiftFiltered.length === 0) return null;
                                     return (
-                                      <div key={cl.clientId} className="rounded-lg bg-slate-900/40 border border-sky-900/20 p-2 hover:border-sky-800/40 transition-colors">
-                                        <div className="text-xs font-semibold text-slate-200 flex items-center gap-1.5 mb-2">
-                                          <div className="p-0.5 rounded bg-sky-950/60">
-                                            <Building2 className="w-3 h-3 text-sky-400" />
+                                      <div key={cl.clientId} className="rounded-lg p-2 transition-colors attendance-client-card">
+                                        <div className="text-xs font-semibold text-[var(--text-primary)] flex items-center gap-1.5 mb-2">
+                                          <div className="p-0.5 rounded bg-[var(--surface-2)]">
+                                            <Building2 className="w-3 h-3 text-[var(--indigo-500)]" />
                                           </div>
                                           <span className="truncate">{clientName}</span>
                                         </div>
@@ -1670,10 +1765,10 @@ export default function AttendanceManager() {
                                                   <Badge
                                                     className={`text-xs cursor-pointer flex items-center gap-1 px-2 py-0.5 rounded-md transition-all hover:scale-105 hover:shadow-md ${
                                                       emp.shift === "night"
-                                                        ? "bg-gradient-to-br from-indigo-950 to-indigo-900/80 text-indigo-200 hover:from-indigo-900 hover:to-indigo-800 border border-indigo-700/60 hover:shadow-indigo-950/50"
+                                                        ? "attendance-badge-night"
                                                         : emp.shift === "half"
-                                                        ? "bg-gradient-to-br from-amber-800 to-amber-700/80 text-amber-100 hover:from-amber-700 hover:to-amber-600 border border-amber-600/60 hover:shadow-amber-900/50"
-                                                        : "bg-gradient-to-br from-amber-950 to-amber-900/80 text-amber-200 hover:from-amber-900 hover:to-amber-800 border border-amber-700/60 hover:shadow-amber-950/50"
+                                                        ? "attendance-badge-half"
+                                                        : "attendance-badge-day"
                                                     }`}
                                                     onClick={() => {
                                                       if (outdatedRecord) {
@@ -1715,10 +1810,10 @@ export default function AttendanceManager() {
                                   })}
 
                                   {rec.absentees.length > 0 && (
-                                    <div className="rounded-lg bg-rose-950/10 border border-rose-900/20 p-2">
-                                      <div className="text-xs font-semibold text-rose-400 flex items-center gap-1.5 mb-2">
-                                        <div className="p-0.5 rounded bg-rose-950/60">
-                                          <UserX className="w-3 h-3" />
+                                    <div className="rounded-lg p-2 attendance-absent-card">
+                                      <div className="text-xs font-semibold text-[var(--error)] flex items-center gap-1.5 mb-2">
+                                        <div className="p-0.5 rounded bg-[var(--error)]/10">
+                                          <UserX className="w-3 h-3 text-[var(--error)]" />
                                         </div>
                                         Absentees
                                       </div>
@@ -1729,7 +1824,7 @@ export default function AttendanceManager() {
                                           return (
                                             <Badge
                                               key={empId}
-                                              className="text-xs px-2 py-0.5 rounded-md bg-gradient-to-br from-rose-950 to-rose-900/80 text-rose-200 border border-rose-800/60 cursor-pointer hover:from-rose-900 hover:to-rose-800 hover:scale-105 hover:shadow-md hover:shadow-rose-950/50 transition-all font-medium"
+                                              className="text-xs px-2 py-0.5 rounded-md cursor-pointer transition-all font-medium attendance-badge-absent hover:scale-105"
                                               onClick={() => {
                                                 if (outdatedRecord) {
                                                   addToast("Clear the data first before modifying attendance.", "error");
@@ -1764,7 +1859,7 @@ export default function AttendanceManager() {
                 <div className="relative flex-1 sm:max-w-sm">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                   <Input
-                    className="pl-8 bg-slate-950/60 border-sky-900/40 text-sm h-9 rounded-lg"
+                    className="pl-8 search-input text-sm h-9 rounded-lg"
                     placeholder="Search clients…"
                     value={searchClient}
                     onChange={(e) => setSearchClient(e.target.value)}
@@ -1772,7 +1867,7 @@ export default function AttendanceManager() {
                 </div>
                 <Button
                   size="sm"
-                  className="bg-gradient-to-r from-sky-500 to-blue-700 hover:from-sky-400 hover:to-blue-600 text-white h-9 shadow-md shadow-blue-950/40 rounded-lg"
+                  className="bg-[var(--accent-500)] hover:bg-[var(--accent-600)] text-white h-9 shadow-md shadow-[var(--accent-glow)] rounded-lg"
                   onClick={openAddClient}
                 >
                   <Plus className="w-4 h-4 mr-1" /> {t('clients.add_client')}
@@ -1788,29 +1883,39 @@ export default function AttendanceManager() {
                   {filteredClients.map((c) => (
                     <Card
                       key={c.id}
-                      className="bg-slate-950/60 border-sky-900/40 hover:border-sky-600/60 flex flex-row items-center justify-between px-4 py-3 rounded-xl transition-colors"
+                      className="list-card flex flex-row items-center justify-between px-4 py-3 rounded-xl"
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-sky-700 to-blue-900 flex items-center justify-center text-sky-100 text-xs font-bold shrink-0 shadow-inner">
-                          {c.name[0]?.toUpperCase()}
-                        </div>
-                        <span className="text-sm font-medium text-slate-200 truncate">
+                       <div
+  className="w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 border border-[var(--border-accent)] shadow-md shadow-[var(--accent-glow)]"
+  style={{
+    background:
+      "linear-gradient(135deg, var(--accent-500) 0%, var(--accent-600) 100%)",
+    color: "var(--primary-foreground)",
+  }}
+>
+  {c.name[0]?.toUpperCase()}
+</div>
+
+                        <span className="text-sm font-medium text-[var(--text-primary)] truncate">
                           {c.name}
                         </span>
                       </div>
+
                       <div className="flex gap-1 shrink-0">
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7 text-slate-500 hover:text-white hover:bg-sky-900/40"
+                          className="h-7 w-7 icon-button-ghost"
                           onClick={() => openEditClient(c)}
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </Button>
+
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7 text-slate-500 hover:text-rose-400 hover:bg-rose-950/40"
+                          className="h-7 w-7 icon-button-ghost hover:text-[var(--error)]"
                           onClick={() => setDeleteClientDialog(c)}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -1828,7 +1933,7 @@ export default function AttendanceManager() {
                 <div className="relative flex-1 sm:max-w-sm">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                   <Input
-                    className="pl-8 bg-slate-950/60 border-sky-900/40 text-sm h-9 rounded-lg"
+                    className="pl-8 search-input text-sm h-9 rounded-lg"
                     placeholder="Search employees…"
                     value={searchEmployee}
                     onChange={(e) => setSearchEmployee(e.target.value)}
@@ -1836,7 +1941,7 @@ export default function AttendanceManager() {
                 </div>
                 <Button
                   size="sm"
-                  className="bg-gradient-to-r from-sky-500 to-blue-700 hover:from-sky-400 hover:to-blue-600 text-white h-9 shadow-md shadow-blue-950/40 rounded-lg"
+                  className="bg-[var(--accent-500)] hover:bg-[var(--accent-600)] text-white h-9 shadow-md shadow-[var(--accent-glow)] rounded-lg"
                   onClick={openAddEmployee}
                 >
                   <Plus className="w-4 h-4 mr-1" /> {t('employees.add_employee')}
@@ -1855,17 +1960,24 @@ export default function AttendanceManager() {
                     return (
                       <Card
                         key={e.id}
-                        className="bg-slate-950/60 border-sky-900/40 hover:border-sky-600/60 flex flex-row items-center justify-between px-4 py-3 rounded-xl transition-colors"
+                        className="list-card flex flex-row items-center justify-between px-4 py-3 rounded-xl"
                       >
                         <div className="flex items-center gap-2 min-w-0">
-                          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-600 to-sky-800 flex items-center justify-center text-sky-100 text-xs font-bold shrink-0 shadow-inner">
-                            {e.name[0]?.toUpperCase()}
-                          </div>
+                         <div
+  className="w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 border border-[var(--border-accent)] shadow-md shadow-[var(--accent-glow)]"
+  style={{
+    background:
+      "linear-gradient(135deg, var(--accent-500) 0%, var(--accent-600) 100%)",
+    color: "var(--primary-foreground)",
+  }}
+>
+  {e.name[0]?.toUpperCase()}
+</div>
                           <div className="min-w-0">
-                            <p className="text-sm font-medium text-slate-200 truncate">
+                            <p className="text-sm font-medium text-[var(--text-primary)] truncate">
                               {e.name}
                             </p>
-                            <p className="text-xs text-slate-500">
+                            <p className="text-xs text-[var(--text-secondary)]">
                               {duties} {duties === 1 ? "duty" : "duties"}
                             </p>
                           </div>
@@ -1874,7 +1986,7 @@ export default function AttendanceManager() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 text-slate-500 hover:text-white hover:bg-sky-900/40"
+                            className="h-7 w-7 icon-button-ghost"
                             onClick={() => openEditEmployee(e)}
                           >
                             <Edit2 className="w-3.5 h-3.5" />
@@ -1882,7 +1994,7 @@ export default function AttendanceManager() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 text-slate-500 hover:text-rose-400 hover:bg-rose-950/40"
+                            className="h-7 w-7 icon-button-ghost hover:text-[var(--error)]"
                             onClick={() => setDeleteEmployeeDialog(e)}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -1899,79 +2011,82 @@ export default function AttendanceManager() {
             <TabsContent value="analytics">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
                 <div>
-                  <h2 className="text-base font-semibold text-slate-200">
+                  <h2 className="text-base font-semibold text-[var(--text-primary)]">
                     {t('analytics.title')}
                   </h2>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-[var(--text-secondary)]">
                     {t('analytics.subtitle')}
                   </p>
                 </div>
                 <TooltipProvider>
-                  <div className="flex gap-2 shrink-0 flex-wrap">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span>
-                          <Button
-                            disabled={!stats.leaderboard.length}
-                            onClick={downloadAnalyticsReport}
-                            className="bg-slate-900 hover:bg-slate-800 text-slate-200 text-xs px-3.5 py-2 h-9 rounded-xl flex items-center gap-1.5 border border-sky-900/40 shadow-md cursor-pointer"
-                          >
-                            <Download className="w-4 h-4 text-sky-400" />
-                            {t('analytics.download_txt')}
-                          </Button>
-                        </span>
-                      </TooltipTrigger>
+  <div className="flex gap-2 shrink-0 flex-wrap">
+    {/* TXT */}
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span>
+          <Button
+            disabled={!stats.leaderboard.length}
+            onClick={downloadAnalyticsReport}
+            className="bg-[var(--surface-2)] hover:bg-[var(--surface-1)] text-[var(--text-primary)] text-xs px-3.5 py-2 h-9 rounded-lg flex items-center gap-1.5 border border-[var(--border-default)] shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Download className="w-4 h-4 text-[var(--accent-500)]" />
+            {t("analytics.download_txt")}
+          </Button>
+        </span>
+      </TooltipTrigger>
 
-                      {!stats.leaderboard.length && (
-                        <TooltipContent>
-                          <p>{t('analytics.add_records_to_export')}</p>
-                        </TooltipContent>
-                      )}
-                    </Tooltip>
+      {!stats.leaderboard.length && (
+        <TooltipContent>
+          <p>{t("analytics.add_records_to_export")}</p>
+        </TooltipContent>
+      )}
+    </Tooltip>
 
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span>
-                          <Button
-                            disabled={!stats.leaderboard.length}
-                            onClick={downloadAnalyticsExcel}
-                            className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3.5 py-2 h-9 rounded-xl flex items-center gap-1.5 shadow-lg shadow-emerald-950/40 border border-emerald-500/20 cursor-pointer"
-                          >
-                            <Download className="w-4 h-4" />
-                            {t('analytics.download_excel')}
-                          </Button>
-                        </span>
-                      </TooltipTrigger>
+    {/* Download Excel */}
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span>
+          <Button
+            disabled={!stats.leaderboard.length}
+            onClick={downloadAnalyticsExcel}
+            className="bg-[var(--accent-500)] hover:bg-[var(--accent-600)] text-white text-xs px-3.5 py-2 h-9 rounded-lg flex items-center gap-1.5 border border-[var(--accent-600)] shadow-md shadow-[var(--accent-glow)] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Download className="w-4 h-4" />
+            {t("analytics.download_excel")}
+          </Button>
+        </span>
+      </TooltipTrigger>
 
-                      {!stats.leaderboard.length && (
-                        <TooltipContent>
-                          <p>{t('analytics.add_records_to_export')}</p>
-                        </TooltipContent>
-                      )}
-                    </Tooltip>
+      {!stats.leaderboard.length && (
+        <TooltipContent>
+          <p>{t("analytics.add_records_to_export")}</p>
+        </TooltipContent>
+      )}
+    </Tooltip>
 
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span>
-                          <Button
-                            disabled={!stats.leaderboard.length}
-                            onClick={() => setDownloadClientDialog(true)}
-                            className="bg-purple-600 hover:bg-purple-500 text-white text-xs px-3.5 py-2 h-9 rounded-xl flex items-center gap-1.5 shadow-lg shadow-purple-950/40 border border-purple-500/20 cursor-pointer"
-                          >
-                            <Download className="w-4 h-4" />
-                            {t('analytics.client_excel')}
-                          </Button>
-                        </span>
-                      </TooltipTrigger>
+    {/* Client Excel */}
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span>
+          <Button
+            disabled={!stats.leaderboard.length}
+            onClick={() => setDownloadClientDialog(true)}
+            className="bg-[var(--accent-500)] hover:bg-[var(--accent-600)] text-white text-xs px-3.5 py-2 h-9 rounded-lg flex items-center gap-1.5 border border-[var(--accent-600)] shadow-md shadow-[var(--accent-glow)] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Download className="w-4 h-4" />
+            {t("analytics.client_excel")}
+          </Button>
+        </span>
+      </TooltipTrigger>
 
-                      {!stats.leaderboard.length && (
-                        <TooltipContent>
-                          <p>{t('analytics.add_records_to_export')}</p>
-                        </TooltipContent>
-                      )}
-                    </Tooltip>
-                  </div>
-                </TooltipProvider>
+      {!stats.leaderboard.length && (
+        <TooltipContent>
+          <p>{t("analytics.add_records_to_export")}</p>
+        </TooltipContent>
+      )}
+    </Tooltip>
+  </div>
+</TooltipProvider>
               </div>
               <div className="grid gap-4 grid-cols-2 lg:grid-cols-4 mb-6">
                 {[
@@ -1979,40 +2094,36 @@ export default function AttendanceManager() {
                     label: t('analytics.total_clients'),
                     value: stats.totalClients,
                     icon: <Building2 className="w-5 h-5" />,
-                    color: "text-sky-400",
-                    glow: "from-sky-500/10",
+                    color: "text-[var(--accent-500)]",
                   },
                   {
                     label: t('analytics.total_employees'),
                     value: stats.totalEmployees,
                     icon: <Users className="w-5 h-5" />,
-                    color: "text-blue-400",
-                    glow: "from-blue-500/10",
+                    color: "text-[var(--indigo-500)]",
                   },
                   {
                     label: t('analytics.total_duties'),
                     value: stats.totalDuties,
                     icon: <Briefcase className="w-5 h-5" />,
-                    color: "text-emerald-400",
-                    glow: "from-emerald-500/10",
+                    color: "text-[var(--success)]",
                   },
                   {
                     label: t('analytics.total_absences'),
                     value: stats.totalAbsentees,
                     icon: <UserX className="w-5 h-5" />,
-                    color: "text-rose-400",
-                    glow: "from-rose-500/10",
+                    color: "text-[var(--error)]",
                   },
                 ].map((s) => (
                   <Card
                     key={s.label}
-                    className={`bg-gradient-to-br ${s.glow} to-slate-950/60 border-sky-900/40 px-5 py-4 rounded-xl hover:border-sky-600/60 transition-colors`}
+                    className="stat-card px-5 py-4 rounded-xl transition-colors hover:border-[var(--border-hover)]"
                   >
                     <div className={`${s.color} mb-2`}>{s.icon}</div>
-                    <p className="text-3xl font-bold text-white tabular-nums">
+                    <p className="text-3xl font-bold text-[var(--text-primary)] tabular-nums">
                       {s.value}
                     </p>
-                    <p className="text-xs text-slate-500 mt-0.5">{s.label}</p>
+                    <p className="text-xs text-[var(--text-secondary)] mt-0.5">{s.label}</p>
                   </Card>
                 ))}
               </div>
@@ -2020,33 +2131,33 @@ export default function AttendanceManager() {
               {/* Fines & Borrowings quick summary in analytics */}
               {(borrowingStats.totalOutstanding > 0 || borrowingStats.totalFines > 0) && (
                 <div className="grid gap-4 grid-cols-2 lg:grid-cols-2 mb-6">
-                  <Card className="bg-gradient-to-br from-orange-500/10 to-slate-950/60 border-orange-900/40 px-5 py-4 rounded-xl hover:border-orange-600/60 transition-colors">
-                    <div className="text-orange-400 mb-2"><TrendingDown className="w-5 h-5" /></div>
-                    <p className="text-3xl font-bold text-white tabular-nums">₹{borrowingStats.totalOutstanding.toLocaleString("en-IN")}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">{t('analytics.outstanding_balance')}</p>
+                  <Card className="warning-card px-5 py-4 rounded-xl">
+                    <div className="text-[var(--warning)] mb-2"><TrendingDown className="w-5 h-5" /></div>
+                    <p className="text-3xl font-bold text-[var(--text-primary)] tabular-nums">₹{borrowingStats.totalOutstanding.toLocaleString("en-IN")}</p>
+                    <p className="text-xs text-[var(--text-secondary)] mt-0.5">{t('analytics.outstanding_balance')}</p>
                   </Card>
-                  <Card className="bg-gradient-to-br from-red-500/10 to-slate-950/60 border-red-900/40 px-5 py-4 rounded-xl hover:border-red-600/60 transition-colors">
-                    <div className="text-red-400 mb-2"><Receipt className="w-5 h-5" /></div>
-                    <p className="text-3xl font-bold text-white tabular-nums">₹{borrowingStats.totalFines.toLocaleString("en-IN")}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">{t('analytics.total_fines')}</p>
+                  <Card className="warning-card px-5 py-4 rounded-xl border-[var(--error)]">
+                    <div className="text-[var(--error)] mb-2"><Receipt className="w-5 h-5" /></div>
+                    <p className="text-3xl font-bold text-[var(--text-primary)] tabular-nums">₹{borrowingStats.totalFines.toLocaleString("en-IN")}</p>
+                    <p className="text-xs text-[var(--text-secondary)] mt-0.5">{t('analytics.total_fines')}</p>
                   </Card>
                 </div>
               )}
 
               {stats.topEmployee && (
-                <Card className="bg-gradient-to-br from-amber-950/60 via-amber-900/20 to-transparent border-amber-800/60 mb-6 px-5 py-4 rounded-xl">
+                <Card className="highlight-card mb-6 px-5 py-4 rounded-xl">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-amber-900/40 border border-amber-700/50 flex items-center justify-center">
-                      <Trophy className="w-6 h-6 text-amber-400" />
+                    <div className="w-12 h-12 rounded-xl bg-[var(--surface-2)] border border-[var(--border-accent)] flex items-center justify-center">
+                      <Trophy className="w-6 h-6 text-[var(--accent-500)]" />
                     </div>
                     <div>
-                      <p className="text-[10px] text-amber-500 uppercase tracking-[0.18em] font-semibold">
+                      <p className="text-[10px] text-[var(--accent-600)] uppercase tracking-[0.18em] font-semibold">
                         {t('analytics.top_performer')}
                       </p>
-                      <p className="text-xl font-bold text-amber-100">
+                      <p className="text-xl font-bold text-[var(--text-primary)]">
                         {stats.topEmployee.name}
                       </p>
-                      <p className="text-sm text-amber-400">
+                      <p className="text-sm text-[var(--text-secondary)]">
                         {stats.topEmployee.count} {t('analytics.duties')}
                       </p>
                     </div>
@@ -2054,16 +2165,16 @@ export default function AttendanceManager() {
                 </Card>
               )}
 
-              <Card className="bg-slate-950/60 border-sky-900/40 rounded-xl">
+              <Card className="dashboard-card rounded-xl">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm text-slate-300 flex items-center gap-2">
-                    <Trophy className="w-4 h-4 text-amber-400" />
+                  <CardTitle className="text-sm text-[var(--text-primary)] flex items-center gap-2">
+                    <Trophy className="w-4 h-4 text-[var(--accent-500)]" />
                     {t('analytics.duty_leaderboard')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {stats.leaderboard.length === 0 ? (
-                    <p className="text-sm text-slate-600">
+                    <p className="text-sm text-[var(--text-muted)]">
                       {t('analytics.no_duties_yet')}
                     </p>
                   ) : (
@@ -2072,12 +2183,8 @@ export default function AttendanceManager() {
                         {stats.leaderboard.map((l, i) => {
                           const rankStyles =
                             i === 0
-                              ? "from-amber-500/20 to-amber-900/5 border-amber-500/40 text-amber-300"
-                              : i === 1
-                                ? "from-slate-400/15 to-slate-700/5 border-slate-400/30 text-slate-200"
-                                : i === 2
-                                  ? "from-orange-500/15 to-orange-900/5 border-orange-500/30 text-orange-300"
-                                  : "from-sky-950/40 to-sky-950/10 border-sky-900/40 text-slate-400";
+                              ? "list-card border-[var(--accent-500)] bg-[var(--surface-2)] font-bold text-[var(--text-primary)]"
+                              : "list-card text-[var(--text-secondary)]";
                           const medal =
                             i === 0
                               ? "🥇"
@@ -2091,13 +2198,24 @@ export default function AttendanceManager() {
                           const hasClients = l.clientDistribution.length > 0;
 
                           return (
-                            <div
+                           <div
                               key={l.id}
-                              className={`group relative overflow-hidden rounded-2xl border bg-gradient-to-br ${rankStyles} transition-all hover:shadow-lg hover:shadow-sky-900/20`}
+                              className={`group relative overflow-hidden rounded-2xl border transition-all hover:shadow-lg ${rankStyles}`}
+                              style={{
+                                background: "var(--surface-card)",
+                                borderColor: "var(--border-default)",
+                                boxShadow: i < 3 ? "0 8px 24px var(--accent-glow)" : undefined,
+                              }}
                             >
                               {/* subtle glow for top 3 */}
                               {i < 3 && (
-                                <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-current opacity-10 blur-2xl" />
+                                <div
+                                  className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full blur-2xl"
+                                  style={{
+                                    background: "var(--accent-500)",
+                                    opacity: 0.12,
+                                  }}
+                                />
                               )}
 
                               <button
@@ -2106,50 +2224,92 @@ export default function AttendanceManager() {
                                   setExpandedLeaders((prev) =>
                                     prev.includes(l.id)
                                       ? prev.filter((id) => id !== l.id)
-                                      : [...prev, l.id],
+                                      : [...prev, l.id]
                                   )
                                 }
-                                className="w-full flex items-center gap-3 px-4 py-3 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/50 rounded-2xl"
+                                className="w-full flex items-center gap-3 px-4 py-3 text-left focus:outline-none focus-visible:ring-2 rounded-2xl"
+                                style={{
+                                  ["--tw-ring-color" as any]: "var(--accent-500)",
+                                }}
                               >
-                                <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#06101f]/70 border border-white/5 font-bold tabular-nums">
+                                {/* Rank */}
+                                <div
+                                  className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl font-bold tabular-nums"
+                                  style={{
+                                    background: "var(--surface-2)",
+                                    border: "1px solid var(--border-subtle)",
+                                  }}
+                                >
                                   {medal ? (
                                     <span className="text-lg">{medal}</span>
                                   ) : (
-                                    <span className="text-sm text-slate-500">
+                                    <span
+                                      className="text-sm"
+                                      style={{ color: "var(--text-muted)" }}
+                                    >
                                       #{i + 1}
                                     </span>
                                   )}
                                 </div>
 
-                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-blue-800 text-sm font-bold text-white shadow-md shadow-sky-900/40 ring-1 ring-sky-400/30">
+                                {/* Avatar */}
+                                <div
+                                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white"
+                                  style={{
+                                    background:
+                                      "linear-gradient(135deg, var(--accent-500), var(--accent-600))",
+                                    boxShadow: "0 6px 18px var(--accent-glow)",
+                                    border: "1px solid var(--border-accent)",
+                                  }}
+                                >
                                   {l.name[0]?.toUpperCase()}
                                 </div>
 
+                                {/* Name */}
                                 <div className="min-w-0 flex-1">
-                                  <p className="truncate text-sm font-semibold text-slate-100">
+                                  <p
+                                    className="truncate text-sm font-semibold"
+                                    style={{ color: "var(--text-heading)" }}
+                                  >
                                     {l.name}
                                   </p>
-                                  <p className="text-[11px] text-slate-500">
+
+                                  <p
+                                    className="text-[11px]"
+                                    style={{ color: "var(--text-muted)" }}
+                                  >
                                     {l.clientDistribution.length} client
-                                    {l.clientDistribution.length === 1
-                                      ? ""
-                                      : "s"}
+                                    {l.clientDistribution.length === 1 ? "" : "s"}
                                   </p>
                                 </div>
 
+                                {/* Count */}
                                 <div className="flex flex-col items-end">
-                                  <span className="text-lg font-bold tabular-nums text-sky-300 leading-none">
+                                  <span
+                                    className="text-lg font-bold tabular-nums leading-none"
+                                    style={{ color: "var(--accent-400)" }}
+                                  >
                                     {l.count}
                                   </span>
-                                  <span className="text-[10px] uppercase tracking-wider text-slate-500">
-                                    {t('analytics.duties')}
+
+                                  <span
+                                    className="text-[10px] uppercase tracking-wider"
+                                    style={{ color: "var(--text-muted)" }}
+                                  >
+                                    {t("analytics.duties")}
                                   </span>
                                 </div>
 
+                                {/* Expand Icon */}
                                 <ChevronDown
-                                  className={`h-4 w-4 text-slate-500 shrink-0 transition-transform duration-300 ${
-                                    isExpanded ? "rotate-180 text-sky-400" : ""
+                                  className={`h-4 w-4 shrink-0 transition-transform duration-300 ${
+                                    isExpanded ? "rotate-180" : ""
                                   }`}
+                                  style={{
+                                    color: isExpanded
+                                      ? "var(--accent-400)"
+                                      : "var(--text-muted)",
+                                  }}
                                 />
                               </button>
 
@@ -2162,28 +2322,52 @@ export default function AttendanceManager() {
                                 }`}
                               >
                                 <div className="overflow-hidden">
-                                  <div className="px-4 pb-3 pt-1 border-t border-white/5">
+                                  <div
+                                    className="px-4 pb-3 pt-1"
+                                    style={{
+                                      borderTop: "1px solid var(--border-subtle)",
+                                    }}
+                                  >
                                     {hasClients ? (
                                       <div className="mt-3 flex flex-wrap gap-1.5">
                                         {l.clientDistribution.map((cd) => (
                                           <div
                                             key={cd.clientId}
-                                            className="flex items-center gap-1.5 rounded-lg border border-sky-900/40 bg-sky-950/40 px-2 py-1 text-[11px] text-slate-300 hover:border-sky-700/60 transition-colors"
+                                            className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] transition-colors"
+                                            style={{
+                                              background: "var(--accent-glow)",
+                                              border: "1px solid var(--border-accent)",
+                                              color: "var(--text-primary)",
+                                            }}
                                           >
-                                            <Building2 className="h-3 w-3 text-sky-500/70" />
+                                            <Building2
+                                              className="h-3 w-3"
+                                              style={{ color: "var(--accent-500)" }}
+                                            />
+
                                             <span className="truncate max-w-[120px]">
                                               {cd.clientName}
                                             </span>
-                                            <span className="rounded-md bg-sky-500/15 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-sky-300">
+
+                                            <span
+                                              className="rounded-md px-1.5 py-0.5 text-[10px] font-bold tabular-nums"
+                                              style={{
+                                                background: "rgba(64,138,113,.18)",
+                                                color: "var(--accent-400)",
+                                              }}
+                                            >
                                               {cd.count}
                                             </span>
                                           </div>
                                         ))}
                                       </div>
                                     ) : (
-                                      <p className="mt-2 text-[11px] italic text-slate-600 flex items-center gap-1.5">
+                                      <p
+                                        className="mt-2 text-[11px] italic flex items-center gap-1.5"
+                                        style={{ color: "var(--text-muted)" }}
+                                      >
                                         <Info className="h-3 w-3" />
-                                        {t('analytics.no_client_assignments')}
+                                        {t("analytics.no_client_assignments")}
                                       </p>
                                     )}
                                   </div>
@@ -2209,7 +2393,7 @@ export default function AttendanceManager() {
                 </div>
                 <Button
                   size="sm"
-                  className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-400 hover:to-red-500 text-white h-9 shadow-md shadow-red-950/40 rounded-lg shrink-0"
+                  className="bg-[var(--accent-500)] hover:bg-[var(--accent-600)] text-white h-9 shadow-md shadow-[var(--accent-glow)] rounded-lg shrink-0"
                   onClick={openAddBorrowing}
                 >
                   <Plus className="w-4 h-4 mr-1" /> Add Record
@@ -2219,15 +2403,15 @@ export default function AttendanceManager() {
               {/* Summary cards */}
               <div className="grid gap-4 grid-cols-2 lg:grid-cols-4 mb-6">
                 {[
-                  { label: "Total Borrowed", value: borrowingStats.totalBorrowed, icon: <Wallet className="w-5 h-5" />, color: "text-yellow-400", glow: "from-yellow-500/10", border: "border-yellow-900/40" },
-                  { label: "Total Fines", value: borrowingStats.totalFines, icon: <Receipt className="w-5 h-5" />, color: "text-red-400", glow: "from-red-500/10", border: "border-red-900/40" },
-                  { label: "Outstanding", value: borrowingStats.totalOutstanding, icon: <TrendingDown className="w-5 h-5" />, color: "text-orange-400", glow: "from-orange-500/10", border: "border-orange-900/40" },
-                  { label: "Total Settled", value: borrowingStats.totalSettled, icon: <CheckCircle2 className="w-5 h-5" />, color: "text-emerald-400", glow: "from-emerald-500/10", border: "border-emerald-900/40" },
+                  { label: "Total Borrowed", value: borrowingStats.totalBorrowed, icon: <Wallet className="w-5 h-5" />, color: "text-[var(--warning)]" },
+                  { label: "Total Fines", value: borrowingStats.totalFines, icon: <Receipt className="w-5 h-5" />, color: "text-[var(--error)]" },
+                  { label: "Outstanding", value: borrowingStats.totalOutstanding, icon: <TrendingDown className="w-5 h-5" />, color: "text-[var(--warning)]" },
+                  { label: "Total Settled", value: borrowingStats.totalSettled, icon: <CheckCircle2 className="w-5 h-5" />, color: "text-[var(--success)]" },
                 ].map((s) => (
-                  <Card key={s.label} className={`bg-gradient-to-br ${s.glow} to-slate-950/60 ${s.border} px-5 py-4 rounded-xl hover:border-opacity-80 transition-colors`}>
+                  <Card key={s.label} className={`dashboard-card px-5 py-4 rounded-xl hover:border-[var(--border-hover)] transition-colors`}>
                     <div className={`${s.color} mb-2`}>{s.icon}</div>
-                    <p className="text-2xl font-bold text-white tabular-nums">₹{s.value.toLocaleString("en-IN")}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">{s.label}</p>
+                    <p className="text-2xl font-bold text-[var(--text-primary)] tabular-nums">₹{s.value.toLocaleString("en-IN")}</p>
+                    <p className="text-xs text-[var(--text-secondary)] mt-0.5">{s.label}</p>
                   </Card>
                 ))}
               </div>
@@ -2273,7 +2457,7 @@ export default function AttendanceManager() {
                   className="w-full sm:w-40"
                 />
                 {(filterBEmployee !== "all" || filterBType !== "all" || filterBSettled !== "all") && (
-                  <Button variant="ghost" size="sm" className="h-9 text-xs text-slate-400 hover:text-white hover:bg-sky-900/40"
+                  <Button variant="ghost" size="sm" className="h-9 text-xs icon-button-ghost"
                     onClick={() => { setFilterBEmployee("all"); setFilterBType("all"); setFilterBSettled("all"); }}>
                     <X className="w-3 h-3 mr-1" /> Clear
                   </Button>
@@ -2321,49 +2505,48 @@ export default function AttendanceManager() {
                           key={b.id}
                           className={`group relative flex flex-col sm:flex-row sm:items-center gap-3 px-4 py-3.5 rounded-xl border transition-all ${
                             b.settled
-                              ? "bg-emerald-950/10 border-emerald-900/20 hover:border-emerald-800/40"
+                              ? "bg-[var(--surface-2)] border-[var(--success)]"
                               : isFine
-                              ? "bg-red-950/20 border-red-900/30 hover:border-red-700/50"
-                              : "bg-amber-950/20 border-amber-900/30 hover:border-amber-700/50"
+                              ? "bg-[var(--surface-2)] border-[var(--error)]"
+                              : "bg-[var(--surface-2)] border-[var(--warning)]"
                           }`}
                         >
-                          {/* Left: Avatar + Name */}
                           <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 ${
+                            <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 text-white ${
                               isFine
-                                ? "bg-gradient-to-br from-red-700 to-red-900 text-red-100"
-                                : "bg-gradient-to-br from-amber-700 to-amber-900 text-amber-100"
+                                ? "bg-[var(--error)]"
+                                : "bg-[var(--warning)]"
                             }`}>
                               {empName[0]?.toUpperCase()}
                             </div>
                             <div className="min-w-0">
-                              <p className="text-sm font-semibold text-slate-200 truncate">{empName}</p>
-                              <p className="text-xs text-slate-500 truncate">{b.note || "No reason provided"}</p>
+                              <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{empName}</p>
+                              <p className="text-xs text-[var(--text-secondary)] truncate">{b.note || "No reason provided"}</p>
                             </div>
                           </div>
 
                           {/* Center: Type badge + Date */}
                           <div className="flex items-center gap-2 shrink-0">
-                            <Badge className={`text-[11px] px-2 py-0.5 rounded-md font-semibold ${
+                            <Badge className={`text-[11px] px-2 py-0.5 rounded-md font-semibold text-white ${
                               isFine
-                                ? "bg-red-900/60 text-red-200 border border-red-700/50"
-                                : "bg-amber-900/60 text-amber-200 border border-amber-700/50"
+                                ? "bg-[var(--error)] border border-[var(--error)]"
+                                : "bg-[var(--warning)] border border-[var(--warning)]"
                             }`}>
                               {isFine ? <Receipt className="w-2.5 h-2.5 mr-1" /> : <Wallet className="w-2.5 h-2.5 mr-1" />}
                               {isFine ? "Fine" : "Borrowing"}
                             </Badge>
-                            <span className="text-xs text-slate-500 tabular-nums">{b.date}</span>
+                            <span className="text-xs text-[var(--text-secondary)] tabular-nums">{b.date}</span>
                           </div>
 
                           {/* Amount */}
                           <div className="shrink-0 text-right">
                             <p className={`text-base font-bold tabular-nums ${
-                              b.settled ? "text-emerald-400" : isFine ? "text-red-300" : "text-amber-300"
+                              b.settled ? "text-[var(--success)]" : isFine ? "text-[var(--error)]" : "text-[var(--warning)]"
                             }`}>
                               ₹{b.amount.toLocaleString("en-IN")}
                             </p>
                             <p className={`text-[10px] font-semibold uppercase tracking-wide ${
-                              b.settled ? "text-emerald-600" : "text-slate-600"
+                              b.settled ? "text-[var(--success)]" : "text-[var(--text-secondary)]"
                             }`}>
                               {b.settled ? "Settled" : "Outstanding"}
                             </p>
@@ -2378,21 +2561,21 @@ export default function AttendanceManager() {
                                   onClick={() => toggleSettled(b.id)}
                                   className={`h-8 w-8 rounded-lg flex items-center justify-center transition-all ${
                                     b.settled
-                                      ? "text-emerald-400 hover:text-emerald-200 hover:bg-emerald-950/60"
-                                      : "text-slate-500 hover:text-emerald-400 hover:bg-emerald-950/40"
+                                      ? "text-[var(--success)] bg-[var(--surface-2)]"
+                                      : "icon-button-ghost hover:text-[var(--success)]"
                                   }`}
                                 >
                                   {b.settled ? <CheckCircle2 className="w-4 h-4" /> : <Circle className="w-4 h-4" />}
                                 </button>
                               </TooltipTrigger>
-                              <TooltipContent className="bg-slate-800 text-slate-200 text-xs border-sky-900/50">
+                              <TooltipContent>
                                 {b.settled ? "Mark as outstanding" : "Mark as settled"}
                               </TooltipContent>
                             </Tooltip>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-white hover:bg-sky-900/40" onClick={() => openEditBorrowing(b)}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 icon-button-ghost" onClick={() => openEditBorrowing(b)}>
                               <Edit2 className="w-3.5 h-3.5" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-rose-400 hover:bg-rose-950/40" onClick={() => setDeleteBorrowingDialog(b)}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 icon-button-ghost hover:text-[var(--error)]" onClick={() => setDeleteBorrowingDialog(b)}>
                               <Trash2 className="w-3.5 h-3.5" />
                             </Button>
                           </div>
@@ -2416,9 +2599,16 @@ export default function AttendanceManager() {
                     <div className="space-y-2">
                       {borrowingStats.perEmployee.map((ep) => (
                         <div key={ep.id} className="flex items-center gap-3 py-2 border-b border-slate-800/60 last:border-0">
-                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center text-xs font-bold text-slate-200 shrink-0">
-                            {ep.name[0]?.toUpperCase()}
-                          </div>
+                          <div
+  className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 border border-[var(--border-accent)] shadow-md shadow-[var(--accent-glow)]"
+  style={{
+    background:
+      "linear-gradient(135deg, var(--accent-500) 0%, var(--accent-600) 100%)",
+    color: "var(--accent-400)",
+  }}
+>
+  {ep.name[0]?.toUpperCase()}
+</div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-slate-200 truncate">{ep.name}</p>
                             <div className="flex gap-3 text-xs text-slate-500 mt-0.5">
@@ -2770,101 +2960,272 @@ export default function AttendanceManager() {
 
         {/* Add/Edit Borrowing or Fine */}
         <Dialog
-          open={borrowingDialog.open}
-          onOpenChange={(o) => !o && setBorrowingDialog({ open: false, editing: null })}
+  open={borrowingDialog.open}
+  onOpenChange={(o) =>
+    !o && setBorrowingDialog({ open: false, editing: null })
+  }
+>
+  <DialogContent
+    className="max-w-[560px] w-[95vw] p-0 overflow-hidden rounded-2xl"
+    style={{
+      background: "var(--surface-1)",
+      border: "1px solid var(--border-default)",
+      color: "var(--text-primary)",
+    }}
+  >
+    {/* Header */}
+    <DialogHeader
+      className="px-6 py-5 border-b"
+      style={{
+        borderColor: "var(--border-default)",
+        background: "var(--surface-2)",
+      }}
+    >
+      <DialogTitle className="flex items-center gap-4">
+        <div
+          className="w-11 h-11 rounded-xl flex items-center justify-center shadow-md"
+          style={{
+            background:
+              borrowingDialog.editing
+                ? "linear-gradient(135deg,var(--accent-500),var(--accent-600))"
+                : "linear-gradient(135deg,var(--accent-500),var(--accent-600))",
+            color: "var(--primary-foreground)",
+          }}
         >
-          <DialogContent className="bg-slate-900 border-sky-900/50 text-slate-100 max-w-sm rounded-xl">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                {borrowingDialog.editing ? (
-                  <><Edit2 className="w-4 h-4 text-sky-400" /> Edit Record</>
-                ) : (
-                  <><Plus className="w-4 h-4 text-orange-400" /> Add Record</>
-                )}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3 mt-2">
-              {/* Type toggle */}
-              <div className="flex rounded-lg overflow-hidden border border-sky-900/40">
-                <button
-                  type="button"
-                  onClick={() => setBType("borrowing")}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold transition-all ${
-                    bType === "borrowing"
-                      ? "bg-gradient-to-r from-amber-600 to-amber-700 text-amber-100"
-                      : "bg-slate-950/60 text-slate-400 hover:text-amber-300"
-                  }`}
-                >
-                  <Wallet className="w-3.5 h-3.5" /> Borrowing
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setBType("fine")}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold transition-all ${
-                    bType === "fine"
-                      ? "bg-gradient-to-r from-red-600 to-red-700 text-red-100"
-                      : "bg-slate-950/60 text-slate-400 hover:text-red-300"
-                  }`}
-                >
-                  <Receipt className="w-3.5 h-3.5" /> Fine
-                </button>
-              </div>
+          {borrowingDialog.editing ? (
+            <Edit2 className="w-5 h-5" />
+          ) : (
+            <Plus className="w-5 h-5" />
+          )}
+        </div>
 
-              {/* Employee */}
-              <SearchableSelect
-                value={bEmployeeId}
-                onValueChange={setBEmployeeId}
-                options={employees.map((e) => ({ value: e.id, label: e.name }))}
-                placeholder="Select Employee"
-                searchPlaceholder="Search employee…"
-                emptyText="No employee found."
-              />
+        <div className="flex flex-col">
+          <span className="text-lg font-semibold">
+            {borrowingDialog.editing ? "Edit Record" : "Add New Record"}
+          </span>
 
-              {/* Amount */}
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-semibold">₹</span>
-                <Input
-                  className="pl-7 bg-slate-950/60 border-sky-900/40 text-slate-100"
-                  placeholder="Amount"
-                  type="number"
-                  min="1"
-                  value={bAmount}
-                  onChange={(e) => setBAmount(e.target.value)}
-                />
-              </div>
+          <span
+            className="text-xs font-normal"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            {bType === "fine"
+              ? "Create a fine entry for an employee."
+              : "Create a borrowing record for an employee."}
+          </span>
+        </div>
+      </DialogTitle>
+    </DialogHeader>
 
-              {/* Date */}
-              <Input
-                className="bg-slate-950/60 border-sky-900/40 text-slate-100"
-                type="date"
-                value={bDate}
-                max={todayStr}
-                onChange={(e) => setBDate(e.target.value)}
-              />
+    {/* Body */}
+    <div className="space-y-5 px-6 py-6">
+      {/* Type */}
+      <div
+        className="grid grid-cols-2 rounded-xl p-1"
+        style={{
+          background: "var(--surface-2)",
+          border: "1px solid var(--border-default)",
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => setBType("borrowing")}
+          className="flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold transition-all"
+          style={
+            bType === "borrowing"
+              ? {
+                  background:
+                    "linear-gradient(135deg,var(--accent-500),var(--accent-600))",
+                  color: "var(--primary-foreground)",
+                  boxShadow: "0 6px 18px var(--accent-glow)",
+                }
+              : {
+                  color: "var(--text-secondary)",
+                }
+          }
+        >
+          <Wallet className="w-4 h-4" />
+          Borrowing
+        </button>
 
-              {/* Note / Reason */}
-              <Input
-                className="bg-slate-950/60 border-sky-900/40 text-slate-100"
-                placeholder={bType === "fine" ? "Reason for fine…" : "Note / reason…"}
-                value={bNote}
-                onChange={(e) => setBNote(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && saveBorrowing()}
-              />
-            </div>
-            <DialogFooter className="mt-4">
-              <Button variant="ghost" className="text-slate-400" onClick={() => setBorrowingDialog({ open: false, editing: null })}>
-                Cancel
-              </Button>
-              <Button
-                className={`text-white ${bType === "fine" ? "bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600" : "bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600"}`}
-                disabled={!bEmployeeId || !bAmount}
-                onClick={saveBorrowing}
-              >
-                {borrowingDialog.editing ? "Update" : "Save"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <button
+          type="button"
+          onClick={() => setBType("fine")}
+          className="flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold transition-all"
+          style={
+            bType === "fine"
+              ? {
+                  background: "linear-gradient(135deg,#d46a6a,#bb5252)",
+                  color: "#fff",
+                }
+              : {
+                  color: "var(--text-secondary)",
+                }
+          }
+        >
+          <Receipt className="w-4 h-4" />
+          Fine
+        </button>
+      </div>
+
+      {/* Employee */}
+      <div className="space-y-2">
+        <label
+          className="text-xs font-medium"
+          style={{ color: "var(--text-secondary)" }}
+        >
+          Employee
+        </label>
+
+        <SearchableSelect
+          value={bEmployeeId}
+          onValueChange={setBEmployeeId}
+          options={employees.map((e) => ({
+            value: e.id,
+            label: e.name,
+          }))}
+          placeholder="Select Employee"
+          searchPlaceholder="Search employee..."
+          emptyText="No employee found."
+        />
+      </div>
+
+      {/* Amount */}
+      <div className="space-y-2">
+        <label
+          className="text-xs font-medium"
+          style={{ color: "var(--text-secondary)" }}
+        >
+          Amount
+        </label>
+
+        <div className="relative">
+          <span
+            className="absolute left-4 top-1/2 -translate-y-1/2 font-semibold"
+            style={{ color: "var(--accent-500)" }}
+          >
+            ₹
+          </span>
+
+          <Input
+            type="number"
+            min="1"
+            placeholder="Enter amount"
+            value={bAmount}
+            onChange={(e) => setBAmount(e.target.value)}
+            className="h-11 pl-10 rounded-lg"
+            style={{
+              background: "var(--surface-input)",
+              borderColor: "var(--border-default)",
+              color: "var(--text-primary)",
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Date */}
+      <div className="space-y-2">
+        <label
+          className="text-xs font-medium"
+          style={{ color: "var(--text-secondary)" }}
+        >
+          Date
+        </label>
+
+        <Input
+          type="date"
+          value={bDate}
+          max={todayStr}
+          onChange={(e) => setBDate(e.target.value)}
+          className="h-11 rounded-lg"
+          style={{
+            background: "var(--surface-input)",
+            borderColor: "var(--border-default)",
+            color: "var(--text-primary)",
+          }}
+        />
+      </div>
+
+      {/* Note */}
+      <div className="space-y-2">
+        <label
+          className="text-xs font-medium"
+          style={{ color: "var(--text-secondary)" }}
+        >
+          {bType === "fine" ? "Reason" : "Note"}
+        </label>
+
+        <Input
+          placeholder={
+            bType === "fine"
+              ? "Reason for fine..."
+              : "Optional note..."
+          }
+          value={bNote}
+          onChange={(e) => setBNote(e.target.value)}
+          onKeyDown={(e) =>
+            e.key === "Enter" && saveBorrowing()
+          }
+          className="h-11 rounded-lg"
+          style={{
+            background: "var(--surface-input)",
+            borderColor: "var(--border-default)",
+            color: "var(--text-primary)",
+          }}
+        />
+      </div>
+    </div>
+
+    {/* Footer */}
+    <DialogFooter
+      className="px-6 py-5 border-t flex justify-end gap-3"
+      style={{
+        borderColor: "var(--border-default)",
+        background: "var(--surface-2)",
+      }}
+    >
+      <Button
+        variant="ghost"
+        className="rounded-lg"
+        style={{
+          color: "var(--text-secondary)",
+        }}
+        onClick={() =>
+          setBorrowingDialog({
+            open: false,
+            editing: null,
+          })
+        }
+      >
+        Cancel
+      </Button>
+
+      <Button
+        disabled={!bEmployeeId || !bAmount}
+        onClick={saveBorrowing}
+        className="rounded-lg px-6 shadow-md"
+        style={{
+          background:
+            bType === "fine"
+              ? "linear-gradient(135deg,#d46a6a,#bb5252)"
+              : "linear-gradient(135deg,var(--accent-500),var(--accent-600))",
+          color: "var(--primary-foreground)",
+        }}
+      >
+        {borrowingDialog.editing ? (
+          <>
+            <Edit2 className="w-4 h-4 mr-2" />
+            Update Record
+          </>
+        ) : (
+          <>
+            <Plus className="w-4 h-4 mr-2" />
+            Save Record
+          </>
+        )}
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
 
         {/* Delete Borrowing / Fine */}
         <AlertDialog

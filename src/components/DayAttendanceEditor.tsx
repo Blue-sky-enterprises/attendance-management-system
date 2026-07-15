@@ -198,16 +198,54 @@ export function DayAttendanceEditor({
                     draggable
                     onDragStart={(e) => handleDragStart(e, emp.id)}
                     onDragEnd={() => setDraggedEmpId(null)}
-                    className={`p-2 rounded border cursor-grab active:cursor-grabbing transition-colors text-sm flex items-center gap-2 ${
-                      isAssigned
-                        ? "bg-sky-950/30 border-sky-700/40 hover:bg-sky-900/30 hover:border-sky-600/50"
-                        : "bg-slate-800 border-slate-700 hover:bg-slate-700 hover:border-sky-700/50"
-                    }`}
+                    className="p-2 rounded border cursor-grab active:cursor-grabbing transition-all text-sm flex items-center gap-2"
+                    style={{
+                      background: isAssigned
+                        ? "var(--accent-glow)"
+                        : "var(--surface-1)",
+                      borderColor: isAssigned
+                        ? "var(--border-accent)"
+                        : "var(--border-default)",
+                      color: "var(--text-primary)",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = isAssigned
+                        ? "rgba(64,138,113,0.22)"
+                        : "var(--surface-card-hover)";
+                      e.currentTarget.style.borderColor = "var(--border-hover)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = isAssigned
+                        ? "var(--accent-glow)"
+                        : "var(--surface-1)";
+                      e.currentTarget.style.borderColor = isAssigned
+                        ? "var(--border-accent)"
+                        : "var(--border-default)";
+                    }}
                   >
-                    <div className={`w-1.5 h-4 rounded-full shrink-0 ${isAssigned ? "bg-sky-400" : "bg-slate-500"}`} />
-                    <span className="truncate flex-1">{emp.name}</span>
+                    <div
+                      className="w-1.5 h-4 rounded-full shrink-0"
+                      style={{
+                        background: isAssigned
+                          ? "var(--accent-400)"
+                          : "var(--text-muted)",
+                      }}
+                    />
+
+                    <span
+                      className="truncate flex-1"
+                      style={{ color: "var(--text-primary)" }}
+                    >
+                      {emp.name}
+                    </span>
+
                     {isAssigned && (
-                      <span className="text-[10px] text-sky-400 font-semibold shrink-0">●</span>
+                      <span
+                        className="text-[10px] font-semibold shrink-0"
+                        style={{ color: "var(--accent-400)" }}
+                      >
+                        ●
+                      </span>
                     )}
                   </div>
                   );
@@ -267,48 +305,103 @@ export function DayAttendanceEditor({
                   const assignedCount = clientRecord?.employees.reduce((acc, e) => acc + e.dutyCount, 0) || 0;
 
                   return (
-                    <div
+                   <div
                       key={client.id}
                       onDragOver={handleDragOver}
                       onDrop={(e) => handleDropOnClient(e, client.id)}
-                      className={`p-4 rounded-xl border-2 border-dashed transition-colors col-span-2 sm:col-span-1 ${
-                        draggedEmpId ? "border-sky-700/50 bg-sky-950/20" : "border-slate-800 bg-slate-900"
-                      }`}
+                      className="p-4 rounded-xl border-2 border-dashed transition-all col-span-2 sm:col-span-1"
+                      style={{
+                        background: draggedEmpId
+                          ? "var(--accent-glow)"
+                          : "var(--surface-1)",
+                        borderColor: draggedEmpId
+                          ? "var(--border-hover)"
+                          : "var(--border-default)",
+                      }}
                     >
-                      <h3 className="font-medium text-sky-400 mb-3 flex items-center justify-between">
+                      <h3
+                        className="font-medium mb-3 flex items-center justify-between"
+                        style={{ color: "var(--accent-400)" }}
+                      >
                         <span className="truncate">{client.name}</span>
-                        <span className="text-xs bg-sky-950 px-2 py-0.5 rounded text-sky-200 shrink-0">
+
+                        <span
+                          className="text-xs px-2 py-0.5 rounded shrink-0"
+                          style={{
+                            background: "var(--accent-glow)",
+                            color: "var(--accent-400)",
+                            border: "1px solid var(--border-accent)",
+                          }}
+                        >
                           {assignedCount} duties
                         </span>
                       </h3>
+
                       <div className="flex flex-wrap gap-2">
                         {clientRecord?.employees.map((emp) => {
                           const empName = employees.find((e) => e.id === emp.employeeId)?.name;
-                          const shiftColor =
+
+                          const shiftStyle =
                             emp.shift === "night"
-                              ? "bg-indigo-950/50 text-indigo-300 border-indigo-800/50"
+                              ? {
+                                  background: "rgba(99,102,241,.12)",
+                                  color: "#818cf8",
+                                  border: "1px solid rgba(99,102,241,.35)",
+                                }
                               : emp.shift === "half"
-                              ? "bg-amber-950/50 text-amber-300 border-amber-800/50"
-                              : "bg-emerald-950/50 text-emerald-300 border-emerald-800/50";
-                          
+                              ? {
+                                  background: "rgba(245,158,11,.12)",
+                                  color: "#fbbf24",
+                                  border: "1px solid rgba(245,158,11,.35)",
+                                }
+                              : {
+                                  background: "rgba(64,138,113,.12)",
+                                  color: "var(--accent-400)",
+                                  border: "1px solid var(--border-accent)",
+                                };
+
                           return (
                             <Badge
                               key={`${emp.employeeId}-${emp.shift}`}
                               variant="outline"
-                              className={`${shiftColor} cursor-pointer hover:opacity-80`}
-                              onClick={() => onRemoveAssignment(client.id, emp.employeeId, emp.shift)}
+                              className="cursor-pointer hover:opacity-80 transition-opacity"
+                              style={shiftStyle}
+                              onClick={() =>
+                                onRemoveAssignment(client.id, emp.employeeId, emp.shift)
+                              }
                             >
                               {empName}
-                              {emp.shift === "night" && <Moon className="w-3 h-3 ml-1 inline" />}
-                              {emp.shift === "half" && <Sun className="w-3 h-3 ml-1 inline opacity-75" />}
-                              {emp.shift === "day" && <Sun className="w-3 h-3 ml-1 inline" />}
-                              {emp.dutyCount > 1 && <span className="ml-1 opacity-70">x{emp.dutyCount}</span>}
+
+                              {emp.shift === "night" && (
+                                <Moon className="w-3 h-3 ml-1 inline" />
+                              )}
+
+                              {emp.shift === "half" && (
+                                <Sun className="w-3 h-3 ml-1 inline opacity-75" />
+                              )}
+
+                              {emp.shift === "day" && (
+                                <Sun className="w-3 h-3 ml-1 inline" />
+                              )}
+
+                              {emp.dutyCount > 1 && (
+                                <span className="ml-1 opacity-70">
+                                  x{emp.dutyCount}
+                                </span>
+                              )}
+
                               <span className="ml-1 font-bold">&times;</span>
                             </Badge>
                           );
                         })}
+
                         {(!clientRecord || clientRecord.employees.length === 0) && (
-                          <span className="text-xs text-slate-500">Drag employees here to assign</span>
+                          <span
+                            className="text-xs"
+                            style={{ color: "var(--text-muted)" }}
+                          >
+                            Drag employees here to assign
+                          </span>
                         )}
                       </div>
                     </div>

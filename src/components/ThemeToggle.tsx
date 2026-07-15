@@ -24,27 +24,24 @@ export function ThemeToggle() {
       ].map(({ mode, Icon, label }) => {
         const active = theme === mode;
         return (
-          <button
-            key={mode}
-            onClick={toggleTheme}
-            aria-label={label}
-            aria-pressed={active}
-            className={[
-              "flex items-center justify-center",
-              "w-[30px] h-[30px] rounded-full border-none",
-              "cursor-pointer transition-all duration-200",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500",
-              active
-                ? isDark
-                  ? "bg-slate-600 text-slate-100 shadow-sm"
-                  : "bg-white text-sky-600 shadow-sm"
-                : isDark
-                  ? "bg-transparent text-slate-500 hover:text-slate-300"
-                  : "bg-transparent text-slate-400 hover:text-slate-600",
-            ].join(" ")}
-          >
-            <Icon size={16} strokeWidth={1.75} />
-          </button>
+         <button
+  key={mode}
+  onClick={toggleTheme}
+  aria-label={label}
+  aria-pressed={active}
+  className={[
+    "flex items-center justify-center",
+    "w-[30px] h-[30px] rounded-full border",
+    "cursor-pointer transition-all duration-200",
+    "focus-visible:outline-none",
+    "focus-visible:ring-2 focus-visible:ring-[var(--accent-500)]",
+    active
+      ? "bg-[var(--accent-500)] text-white border-[var(--accent-500)] shadow-md shadow-[var(--accent-glow)]"
+      : "bg-transparent text-[var(--text-secondary)] border-transparent hover:bg-[var(--surface-2)] hover:text-[var(--accent-500)] hover:border-[var(--border-default)]",
+  ].join(" ")}
+>
+  <Icon size={16} strokeWidth={1.75} />
+</button>
         );
       })}
     </div>

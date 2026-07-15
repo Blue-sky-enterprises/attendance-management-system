@@ -53,97 +53,123 @@ export function SearchableSelect({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          disabled={disabled}
-          aria-expanded={open}
-          aria-haspopup="listbox"
-          className={cn(
-            /* base */
-            "flex h-9 w-full items-center justify-between gap-2 rounded-lg border px-3 py-2 text-xs",
-            /* colours */
-            "border-sky-900/40 bg-slate-950/60 text-slate-200",
-            /* hover / focus */
-            "hover:border-sky-700/50 hover:bg-slate-900/70 transition-all duration-150",
-            "focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/50 focus-visible:ring-offset-0",
-            /* disabled */
-            "disabled:cursor-not-allowed disabled:opacity-50",
-            /* no selection */
-            !selectedOption && "text-slate-500",
-            className,
-          )}
-        >
-          <span className="flex min-w-0 items-center gap-1.5 truncate">
-            {selectedOption?.icon && (
-              <span className="shrink-0">{selectedOption.icon}</span>
-            )}
-            <span className="truncate">
-              {selectedOption?.label ?? placeholder}
-            </span>
-          </span>
-          <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 opacity-40" />
-        </button>
-      </PopoverTrigger>
+  <PopoverTrigger asChild>
+    <button
+      type="button"
+      disabled={disabled}
+      aria-expanded={open}
+      aria-haspopup="listbox"
+      className={cn(
+        /* Base */
+        "flex h-9 w-full items-center justify-between gap-2 rounded-lg border px-3 py-2 text-xs transition-all duration-150",
 
-      <PopoverContent
-        align="start"
-        sideOffset={4}
-        className="w-[var(--radix-popover-trigger-width)] min-w-[10rem] p-0 bg-slate-900 border border-sky-900/50 shadow-2xl shadow-black/50 rounded-xl"
-      >
-        <Command className="bg-transparent text-white">
-          {/* ── Search input ── */}
-          <div className="border-b border-sky-900/40">
-            <CommandInput
-              placeholder={searchPlaceholder}
-              className="h-9 text-xs text-white placeholder:text-slate-500 bg-transparent"
-            />
-          </div>
+        /* Theme */
+        "bg-[var(--surface-2)] border-[var(--border-default)] text-[var(--text-primary)]",
 
-          <CommandEmpty className="py-4 text-center text-xs text-slate-500">
-            {emptyText}
-          </CommandEmpty>
+        /* Hover / Focus */
+        "hover:bg-[var(--surface-1)] hover:border-[var(--border-hover)]",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-500)] focus-visible:ring-offset-0",
 
-          <CommandGroup className="max-h-52 overflow-y-auto p-1">
-            {options.map((option) => {
-              const isSelected = value === option.value;
-              return (
-                <CommandItem
-                  key={option.value}
-                  /* cmdk matches against `value` prop — use label so search works */
-                  value={option.label}
-                  className={cn(
-                    "flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs",
-                    "text-slate-300 transition-colors",
-                    "aria-selected:bg-sky-950/70 aria-selected:text-sky-100",
-                    "hover:bg-sky-950/50 hover:text-slate-100",
-                    isSelected && "bg-sky-950/40 text-sky-100",
-                  )}
-                  onSelect={() => {
-                    onValueChange(option.value);
-                    setOpen(false);
-                  }}
-                >
-                  {/* selection indicator */}
-                  <Check
-                    className={cn(
-                      "h-3.5 w-3.5 shrink-0 text-sky-400",
-                      isSelected ? "opacity-100" : "opacity-0",
-                    )}
-                  />
+        /* Disabled */
+        "disabled:cursor-not-allowed disabled:opacity-50",
 
-                  {/* optional icon */}
-                  {option.icon && (
-                    <span className="shrink-0">{option.icon}</span>
-                  )}
+        /* Placeholder */
+        !selectedOption && "text-[var(--text-muted)]",
 
-                  <span className="truncate">{option.label}</span>
-                </CommandItem>
-              );
-            })}
-          </CommandGroup>
-        </Command>
-      </PopoverContent>
-    </Popover>
+        className
+      )}
+    >
+      <span className="flex min-w-0 items-center gap-1.5 truncate">
+        {selectedOption?.icon && (
+          <span className="shrink-0">{selectedOption.icon}</span>
+        )}
+
+        <span className="truncate">
+          {selectedOption?.label ?? placeholder}
+        </span>
+      </span>
+
+      <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-[var(--text-secondary)]" />
+    </button>
+  </PopoverTrigger>
+
+  <PopoverContent
+    align="start"
+    sideOffset={4}
+    className="
+      w-[var(--radix-popover-trigger-width)]
+      min-w-[10rem]
+      p-0
+      rounded-xl
+      bg-[var(--surface-card)]
+      backdrop-blur-md
+      border
+      border-[var(--border-default)]
+      shadow-xl
+    "
+  >
+    <Command className="bg-transparent text-[var(--text-primary)]">
+      {/* Search */}
+      <div className="border-b border-[var(--border-default)]">
+        <CommandInput
+          placeholder={searchPlaceholder}
+          className="
+            h-9
+            text-xs
+            bg-transparent
+            text-[var(--text-primary)]
+            placeholder:text-[var(--text-muted)]
+          "
+        />
+      </div>
+
+      <CommandEmpty className="py-4 text-center text-xs text-[var(--text-muted)]">
+        {emptyText}
+      </CommandEmpty>
+
+      <CommandGroup className="max-h-52 overflow-y-auto p-1">
+        {options.map((option) => {
+          const isSelected = value === option.value;
+
+          return (
+            <CommandItem
+              key={option.value}
+              value={option.label}
+              className={cn(
+                "flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs transition-colors",
+
+                "text-[var(--text-primary)]",
+
+                "hover:bg-[var(--accent-glow)] hover:text-[var(--text-heading)]",
+
+                "aria-selected:bg-[var(--accent-glow)] aria-selected:text-[var(--text-heading)]",
+
+                isSelected &&
+                  "bg-[var(--accent-glow)] text-[var(--accent-500)] font-medium"
+              )}
+              onSelect={() => {
+                onValueChange(option.value);
+                setOpen(false);
+              }}
+            >
+              <Check
+                className={cn(
+                  "h-3.5 w-3.5 shrink-0 text-[var(--accent-500)]",
+                  isSelected ? "opacity-100" : "opacity-0"
+                )}
+              />
+
+              {option.icon && (
+                <span className="shrink-0">{option.icon}</span>
+              )}
+
+              <span className="truncate">{option.label}</span>
+            </CommandItem>
+          );
+        })}
+      </CommandGroup>
+    </Command>
+  </PopoverContent>
+</Popover>
   );
 }
