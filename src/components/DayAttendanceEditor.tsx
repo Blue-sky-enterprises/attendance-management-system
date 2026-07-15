@@ -67,6 +67,14 @@ export function DayAttendanceEditor({
   // Search query for employees
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Local error message
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const showError = (msg: string) => {
+    setErrorMsg(msg);
+    setTimeout(() => setErrorMsg(null), 3500);
+  };
+
   const handleDragStart = (e: React.DragEvent, empId: string) => {
     e.dataTransfer.setData("empId", empId);
     setDraggedEmpId(empId);
@@ -80,6 +88,26 @@ export function DayAttendanceEditor({
     e.preventDefault();
     const empId = e.dataTransfer.getData("empId");
     if (empId) {
+      // Check: does this employee already have the SAME shift anywhere today?
+      const alreadyHasShift = record.clients.some((c) =>
+        c.employees.some((a) => a.employeeId === empId && a.shift === dropShift)
+      );
+
+      if (alreadyHasShift) {
+        const empName = employees.find((e) => e.id === empId)?.name ?? "Employee";
+        // Find which client already has this employee on this shift
+        const existingClient = record.clients.find((c) =>
+          c.employees.some((a) => a.employeeId === empId && a.shift === dropShift)
+        );
+        const existingClientName = existingClient
+          ? (clients.find((c) => c.id === existingClient.clientId)?.name ?? "another client")
+          : "another client";
+        const shiftLabelMl = dropShift === "day" ? "പകൽ" : dropShift === "night" ? "രാത്രി" : "ഹാഫ് ഡേ";
+        showError(`${empName} ഇന്ന് ${existingClientName}-ൽ ${shiftLabelMl} ഷിഫ്റ്റിൽ ഉണ്ട്. മറ്റൊരു ഷിഫ്റ്റ് തിരഞ്ഞെടുക്കുക.`);
+        setDraggedEmpId(null);
+        return;
+      }
+
       onAssign(clientId, [empId], dropShift);
     }
     setDraggedEmpId(null);
@@ -94,21 +122,19 @@ export function DayAttendanceEditor({
     setDraggedEmpId(null);
   };
 
-  // Unassigned employees (not absent and not assigned anywhere)
-  const unassignedEmployees = employees.filter((emp) => {
-    if (record.absentees.includes(emp.id)) return false;
-    let isAssigned = false;
-    for (const c of record.clients) {
-      if (c.employees.some((e) => e.employeeId === emp.id)) {
-        isAssigned = true;
-        break;
-      }
-    }
-    return !isAssigned;
-  });
+  // All employees except those marked absent — assigned ones remain visible
+  // since an employee can work multiple shifts (e.g., day at one client, night at another)
+  const availableEmployees = employees.filter(
+    (emp) => !record.absentees.includes(emp.id)
+  );
 
-  const filteredUnassignedEmployees = unassignedEmployees.filter((emp) =>
+  const filteredEmployees = availableEmployees.filter((emp) =>
     emp.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Employees already assigned somewhere (for visual indicator)
+  const assignedEmployeeIds = new Set(
+    record.clients.flatMap((c) => c.employees.map((e) => e.employeeId))
   );
 
   const dateInfo = getTitleDateInfo(date);
@@ -140,11 +166,19 @@ export function DayAttendanceEditor({
           </div>
         </DialogHeader>
 
+        {/* Error Banner */}
+        {errorMsg && (
+          <div className="mx-4 mb-0 mt-2 flex items-center gap-2 rounded-lg border border-rose-800/50 bg-rose-950/40 px-3 py-2 text-xs text-rose-300 animate-in fade-in slide-in-from-top-1 duration-200 shrink-0">
+            <span className="text-rose-400 text-base leading-none">⚠</span>
+            {errorMsg}
+          </div>
+        )}
+
         <div className="flex flex-1 overflow-hidden">
-          {/* Left Panel: Unassigned Employees */}
+          {/* Left Panel: Employees */}
           <div className="w-1/4 border-r border-sky-900/50 bg-slate-950/30 flex flex-col">
             <div className="p-3 border-b border-sky-900/30 font-medium text-slate-300 text-sm">
-              Unassigned ({filteredUnassignedEmployees.length})
+              Employees ({filteredEmployees.length})
             </div>
             <div className="p-2 border-b border-sky-900/30">
               <Input
@@ -156,25 +190,40 @@ export function DayAttendanceEditor({
             </div>
             <ScrollArea className="flex-1 p-3">
               <div className="flex flex-col gap-2">
-                {filteredUnassignedEmployees.map((emp) => (
+                {filteredEmployees.map((emp) => {
+                  const isAssigned = assignedEmployeeIds.has(emp.id);
+                  return (
                   <div
                     key={emp.id}
                     draggable
                     onDragStart={(e) => handleDragStart(e, emp.id)}
                     onDragEnd={() => setDraggedEmpId(null)}
-                    className="p-2 rounded bg-slate-800 border border-slate-700 cursor-grab active:cursor-grabbing hover:bg-slate-700 hover:border-sky-700/50 transition-colors text-sm flex items-center gap-2"
+                    className={`p-2 rounded border cursor-grab active:cursor-grabbing transition-colors text-sm flex items-center gap-2 ${
+                      isAssigned
+                        ? "bg-sky-950/30 border-sky-700/40 hover:bg-sky-900/30 hover:border-sky-600/50"
+                        : "bg-slate-800 border-slate-700 hover:bg-slate-700 hover:border-sky-700/50"
+                    }`}
                   >
-                    <div className="w-1.5 h-4 bg-sky-500 rounded-full shrink-0" />
-                    {emp.name}
+                    <div className={`w-1.5 h-4 rounded-full shrink-0 ${isAssigned ? "bg-sky-400" : "bg-slate-500"}`} />
+                    <span className="truncate flex-1">{emp.name}</span>
+                    {isAssigned && (
+                      <span className="text-[10px] text-sky-400 font-semibold shrink-0">●</span>
+                    )}
                   </div>
-                ))}
-                {filteredUnassignedEmployees.length === 0 && (
+                  );
+                })}
+                {filteredEmployees.length === 0 && (
                   <div className="text-center text-xs text-slate-500 py-4">
                     {searchQuery ? "No matches found." : "All employees are assigned or absent."}
                   </div>
                 )}
               </div>
             </ScrollArea>
+            {assignedEmployeeIds.size > 0 && (
+              <div className="p-2 border-t border-sky-900/30 text-[10px] text-slate-500 flex items-center gap-1.5">
+                <span className="text-sky-400">●</span> Already assigned — drag again for another shift
+              </div>
+            )}
           </div>
 
           {/* Right Panel: Clients & Absent */}
