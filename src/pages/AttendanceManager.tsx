@@ -137,7 +137,7 @@ export default function AttendanceManager() {
   const [employeeName, setEmployeeName] = useState("");
   const [attClientId, setAttClientId] = useState("");
   const [attEmployeeId, setAttEmployeeId] = useState("");
-  const [attShift, setAttShift] = useState<"day" | "night">("day");
+  const [attShift, setAttShift] = useState<"day" | "night" | "half">("day");
   const [absenteeId, setAbsenteeId] = useState("");
 
   // Borrowing/Fine form states
@@ -491,7 +491,7 @@ export default function AttendanceManager() {
     date: string,
     clientId: string,
     employeeId: string,
-    shift: "day" | "night",
+    shift: "day" | "night" | "half",
   ) => {
     if (date > todayStr) {
       addToast("Cannot modify attendance for future dates", "error");
@@ -713,7 +713,7 @@ export default function AttendanceManager() {
           employees.find((e) => e.id === emp.employeeId)?.name ??
           "Unknown Employee";
 
-        const shiftLabel = emp.shift === "night" ? " (N)" : " (D)";
+        const shiftLabel = emp.shift === "night" ? " (N)" : emp.shift === "half" ? " (H)" : " (D)";
 
         if (emp.dutyCount > 1) {
           for (let i = 0; i < emp.dutyCount; i++) {
@@ -795,7 +795,7 @@ export default function AttendanceManager() {
       clients.forEach((c) => {
         report += `Client: ${c.name}\n`;
         let clientDuties = 0;
-        const clientEmpDuties: Record<string, { day: number; night: number }> = {};
+        const clientEmpDuties: Record<string, { day: number; night: number; half: number }> = {};
 
         attendanceRecords.forEach((rec) => {
           const recClient = rec.clients.find((rc) => rc.clientId === c.id);
@@ -803,12 +803,14 @@ export default function AttendanceManager() {
             recClient.employees.forEach((emp) => {
               clientDuties += emp.dutyCount;
               if (!clientEmpDuties[emp.employeeId]) {
-                clientEmpDuties[emp.employeeId] = { day: 0, night: 0 };
+                clientEmpDuties[emp.employeeId] = { day: 0, night: 0, half: 0 };
               }
               if (emp.shift === "day") {
                 clientEmpDuties[emp.employeeId].day += emp.dutyCount;
-              } else {
+              } else if (emp.shift === "night") {
                 clientEmpDuties[emp.employeeId].night += emp.dutyCount;
+              } else {
+                clientEmpDuties[emp.employeeId].half += emp.dutyCount;
               }
             });
           }
@@ -826,6 +828,7 @@ export default function AttendanceManager() {
             const shiftDetails = [];
             if (shiftCounts.day > 0) shiftDetails.push(`${shiftCounts.day} Day`);
             if (shiftCounts.night > 0) shiftDetails.push(`${shiftCounts.night} Night`);
+            if (shiftCounts.half > 0) shiftDetails.push(`${shiftCounts.half} Half Day`);
             report += `  * ${empName} (${shiftDetails.join(", ")} shift duties)\n`;
           });
         }
@@ -853,7 +856,7 @@ export default function AttendanceManager() {
             const clientName = clients.find((c) => c.id === rc.clientId)?.name ?? "Unknown Client";
             const empAssignments = rc.employees.map((emp) => {
               const empName = employees.find((e) => e.id === emp.employeeId)?.name ?? "Unknown Employee";
-              const shiftLabel = emp.shift === "day" ? "Day" : "Night";
+              const shiftLabel = emp.shift === "day" ? "Day" : emp.shift === "night" ? "Night" : "Half Day";
               const countLabel = emp.dutyCount > 1 ? ` (x${emp.dutyCount})` : "";
               return `${empName} - ${shiftLabel}${countLabel}`;
             });
@@ -1012,7 +1015,7 @@ export default function AttendanceManager() {
                 const empName =
                   employees.find((e) => e.id === emp.employeeId)?.name ??
                   "Unknown Employee";
-                const shiftLabel = emp.shift === "day" ? "Day" : "Night";
+                const shiftLabel = emp.shift === "day" ? "Day" : emp.shift === "night" ? "Night" : "Half Day";
                 const countLabel =
                   emp.dutyCount > 1 ? ` (x${emp.dutyCount})` : "";
                 return `${empName} (${shiftLabel}${countLabel})`;
@@ -1151,7 +1154,7 @@ export default function AttendanceManager() {
               const empName =
                 employees.find((e) => e.id === emp.employeeId)?.name ??
                 "Unknown Employee";
-              const shiftLabel = emp.shift === "day" ? "Day" : "Night";
+              const shiftLabel = emp.shift === "day" ? "Day" : emp.shift === "night" ? "Night" : "Half Day";
               
               const [y, m, d] = rec.date.split("-");
               const formattedDate = `${d}/${m}/${y}`;
@@ -1448,6 +1451,7 @@ export default function AttendanceManager() {
                     { value: "all", label: "All Shifts" },
                     { value: "day", label: "Day", icon: <Sun className="w-3 h-3 text-amber-400" /> },
                     { value: "night", label: "Night", icon: <Moon className="w-3 h-3 text-indigo-400" /> },
+                    { value: "half", label: "Half Day", icon: <Sun className="w-3 h-3 text-amber-600 opacity-75" /> },
                   ]}
                   placeholder="All Shifts"
                   searchPlaceholder="Search shifts…"
@@ -1688,6 +1692,8 @@ export default function AttendanceManager() {
                                                     className={`text-xs cursor-pointer flex items-center gap-1 px-2 py-0.5 rounded-md transition-all hover:scale-105 hover:shadow-md ${
                                                       emp.shift === "night"
                                                         ? "bg-gradient-to-br from-indigo-950 to-indigo-900/80 text-indigo-200 hover:from-indigo-900 hover:to-indigo-800 border border-indigo-700/60 hover:shadow-indigo-950/50"
+                                                        : emp.shift === "half"
+                                                        ? "bg-gradient-to-br from-amber-800 to-amber-700/80 text-amber-100 hover:from-amber-700 hover:to-amber-600 border border-amber-600/60 hover:shadow-amber-900/50"
                                                         : "bg-gradient-to-br from-amber-950 to-amber-900/80 text-amber-200 hover:from-amber-900 hover:to-amber-800 border border-amber-700/60 hover:shadow-amber-950/50"
                                                     }`}
                                                     onClick={() => {
@@ -1704,6 +1710,8 @@ export default function AttendanceManager() {
                                                   >
                                                     {emp.shift === "night" ? (
                                                       <Moon className="w-2.5 h-2.5" />
+                                                    ) : emp.shift === "half" ? (
+                                                      <Sun className="w-2.5 h-2.5 opacity-75" />
                                                     ) : (
                                                       <Sun className="w-2.5 h-2.5" />
                                                     )}
@@ -2764,10 +2772,11 @@ export default function AttendanceManager() {
               />
               <SearchableSelect
                 value={attShift}
-                onValueChange={(v) => setAttShift(v as "day" | "night")}
+                onValueChange={(v) => setAttShift(v as "day" | "night" | "half")}
                 options={[
                   { value: "day", label: "Day Shift", icon: <Sun className="w-3.5 h-3.5 text-amber-400" /> },
                   { value: "night", label: "Night Shift", icon: <Moon className="w-3.5 h-3.5 text-indigo-400" /> },
+                  { value: "half", label: "Half Day", icon: <Sun className="w-3.5 h-3.5 text-amber-600 opacity-75" /> },
                 ]}
                 placeholder="Select Shift"
                 searchPlaceholder="Search shift…"

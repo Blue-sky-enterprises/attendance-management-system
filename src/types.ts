@@ -12,7 +12,7 @@ export interface Employee {
 
 export interface AttendanceAssignment {
   employeeId: string;
-  shift: "day" | "night";
+  shift: "day" | "night" | "half";
   dutyCount: number;
 }
 
