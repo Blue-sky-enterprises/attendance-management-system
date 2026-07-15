@@ -493,32 +493,32 @@ export default function AttendanceManager() {
 
   // ── Absentees ───────────────────────────────────────────────────────────────
 
-  const addAbsentee = () => {
-    if (!addAbsenteeDialog || !absenteeId) return;
-    const { date } = addAbsenteeDialog;
-    if (date > todayStr) {
-      addToast("Cannot record absentees for future dates", "error");
-      return;
-    }
-    const rec = getRecord(date);
-    if (rec.absentees.includes(absenteeId)) {
-      addToast("Already marked absent", "error");
-      return;
-    }
-    const isPresent = rec.clients.some((cl) =>
-      cl.employees.some((emp) => emp.employeeId === absenteeId)
-    );
-    if (isPresent) {
-      addToast("Employee is already assigned (present) on this day", "error");
-      return;
-    }
-    updateRecord(date, (r) => ({
-      ...r,
-      absentees: [...r.absentees, absenteeId],
-    }));
-    addToast("Absentee marked");
-    setAddAbsenteeDialog(null);
-  };
+  // const addAbsentee = () => {
+  //   if (!addAbsenteeDialog || !absenteeId) return;
+  //   const { date } = addAbsenteeDialog;
+  //   if (date > todayStr) {
+  //     addToast("Cannot record absentees for future dates", "error");
+  //     return;
+  //   }
+  //   const rec = getRecord(date);
+  //   if (rec.absentees.includes(absenteeId)) {
+  //     addToast("Already marked absent", "error");
+  //     return;
+  //   }
+  //   const isPresent = rec.clients.some((cl) =>
+  //     cl.employees.some((emp) => emp.employeeId === absenteeId)
+  //   );
+  //   if (isPresent) {
+  //     addToast("Employee is already assigned (present) on this day", "error");
+  //     return;
+  //   }
+  //   updateRecord(date, (r) => ({
+  //     ...r,
+  //     absentees: [...r.absentees, absenteeId],
+  //   }));
+  //   addToast("Absentee marked");
+  //   setAddAbsenteeDialog(null);
+  // };
 
   const removeAbsentee = (date: string, employeeId: string) => {
     if (date > todayStr) {
