@@ -25,6 +25,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { MultiSelect } from "@/components/ui/multi-select";
 import {
   Tooltip,
   TooltipContent,
@@ -69,6 +70,7 @@ import { ToastContainer } from "@/components/toast";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ExportPanel } from "@/components/backup/ExportPanel";
 import { ImportPanel } from "@/components/backup/ImportPanel";
+import { DayAttendanceEditor } from "@/components/DayAttendanceEditor";
 
 
 
@@ -113,14 +115,8 @@ export default function AttendanceManager() {
     useState<Employee | null>(null);
   const [clearDialog, setClearDialog] = useState<string | null>(null);
 
-  const [addAttendanceDialog, setAddAttendanceDialog] = useState<{
-    open: boolean;
-    date: string;
-  } | null>(null);
-  const [addAbsenteeDialog, setAddAbsenteeDialog] = useState<{
-    open: boolean;
-    date: string;
-  } | null>(null);
+
+  const [editDayDialog, setEditDayDialog] = useState<string | null>(null);
 
   // Borrowing/Fine dialog states
   const [borrowingDialog, setBorrowingDialog] = useState<{
@@ -135,10 +131,6 @@ export default function AttendanceManager() {
   // Form states
   const [clientName, setClientName] = useState("");
   const [employeeName, setEmployeeName] = useState("");
-  const [attClientId, setAttClientId] = useState("");
-  const [attEmployeeId, setAttEmployeeId] = useState("");
-  const [attShift, setAttShift] = useState<"day" | "night" | "half">("day");
-  const [absenteeId, setAbsenteeId] = useState("");
 
   // Borrowing/Fine form states
   const [bEmployeeId, setBEmployeeId] = useState("");
@@ -430,61 +422,39 @@ export default function AttendanceManager() {
 
   // ── Attendance ──────────────────────────────────────────────────────────────
 
-  const addAttendance = () => {
-    if (!addAttendanceDialog || !attClientId || !attEmployeeId) return;
-    const { date } = addAttendanceDialog;
-    if (date > todayStr) {
-      addToast("Cannot record attendance for future dates", "error");
-      return;
-    }
-    const rec = getRecord(date);
-    if (rec.absentees.includes(attEmployeeId)) {
-      addToast("Employee is marked absent on this day", "error");
-      return;
-    }
+
+  const handleAssign = (date: string, clientId: string, employeeIds: string[], shift: "day" | "night" | "half") => {
     updateRecord(date, (r) => {
-      const clientIdx = r.clients.findIndex((c) => c.clientId === attClientId);
+      let updatedClients = [...r.clients];
+      const clientIdx = updatedClients.findIndex((c) => c.clientId === clientId);
+      
+      let clientRec = clientIdx === -1 
+        ? { clientId, employees: [] as typeof updatedClients[0]['employees'] }
+        : { ...updatedClients[clientIdx], employees: [...updatedClients[clientIdx].employees] };
+
+      employeeIds.forEach(empId => {
+        const empIdx = clientRec.employees.findIndex(
+          (e) => e.employeeId === empId && e.shift === shift,
+        );
+
+        if (empIdx === -1) {
+          clientRec.employees.push({ employeeId: empId, shift, dutyCount: 1 });
+        } else {
+          clientRec.employees[empIdx] = {
+            ...clientRec.employees[empIdx],
+            dutyCount: clientRec.employees[empIdx].dutyCount + 1,
+          };
+        }
+      });
+
       if (clientIdx === -1) {
-        return {
-          ...r,
-          clients: [
-            ...r.clients,
-            {
-              clientId: attClientId,
-              employees: [
-                { employeeId: attEmployeeId, shift: attShift, dutyCount: 1 },
-              ],
-            },
-          ],
-        };
-      }
-      const empIdx = r.clients[clientIdx].employees.findIndex(
-        (e) => e.employeeId === attEmployeeId && e.shift === attShift,
-      );
-      const updatedClients = [...r.clients];
-      if (empIdx === -1) {
-        updatedClients[clientIdx] = {
-          ...updatedClients[clientIdx],
-          employees: [
-            ...updatedClients[clientIdx].employees,
-            { employeeId: attEmployeeId, shift: attShift, dutyCount: 1 },
-          ],
-        };
+        updatedClients.push(clientRec);
       } else {
-        const emps = [...updatedClients[clientIdx].employees];
-        emps[empIdx] = {
-          ...emps[empIdx],
-          dutyCount: emps[empIdx].dutyCount + 1,
-        };
-        updatedClients[clientIdx] = {
-          ...updatedClients[clientIdx],
-          employees: emps,
-        };
+        updatedClients[clientIdx] = clientRec;
       }
+
       return { ...r, clients: updatedClients };
     });
-    addToast("Attendance recorded");
-    setAddAttendanceDialog(null);
   };
 
   const removeAssignment = (
@@ -1560,39 +1530,21 @@ export default function AttendanceManager() {
                             <div className="flex items-center gap-0.5 shrink-0">
                               {!isLocked && !outdatedRecord && (
                                 <>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-7 text-xs px-2.5 rounded-lg transition-all text-emerald-400 hover:text-emerald-200 hover:bg-emerald-950/60 hover:shadow-sm hover:shadow-emerald-950/50 font-medium"
-                                    onClick={() => {
-                                      if (rec.date > todayStr) {
-                                        addToast("Cannot record attendance for future dates", "error");
-                                        return;
-                                      }
-                                      setAttClientId("");
-                                      setAttEmployeeId("");
-                                      setAttShift("day");
-                                      setAddAttendanceDialog({ open: true, date: rec.date });
-                                    }}
-                                  >
-                                    <Plus className="w-3 h-3 mr-0.5" /> Assign
-                                  </Button>
 
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-7 text-xs px-2.5 rounded-lg transition-all text-rose-400 hover:text-rose-200 hover:bg-rose-950/60 hover:shadow-sm hover:shadow-rose-950/50 font-medium"
-                                    onClick={() => {
-                                      if (rec.date > todayStr) {
-                                        addToast("Cannot mark absentees for future dates", "error");
-                                        return;
-                                      }
-                                      setAbsenteeId("");
-                                      setAddAbsenteeDialog({ open: true, date: rec.date });
-                                    }}
-                                  >
-                                    <UserX className="w-3 h-3 mr-0.5" /> Absent
-                                  </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-7 text-xs px-2.5 rounded-lg transition-all text-sky-400 hover:text-sky-200 hover:bg-sky-950/60 hover:shadow-sm hover:shadow-sky-950/50 font-medium"
+                                      onClick={() => {
+                                        if (rec.date > todayStr) {
+                                          addToast("Cannot edit attendance for future dates", "error");
+                                          return;
+                                        }
+                                        setEditDayDialog(rec.date);
+                                      }}
+                                    >
+                                      <Edit2 className="w-3 h-3 mr-0.5" /> Manage
+                                    </Button>
 
                                   <div className="w-px h-5 bg-gradient-to-b from-transparent via-sky-800/50 to-transparent mx-1" />
                                 </>
@@ -2737,119 +2689,29 @@ export default function AttendanceManager() {
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* Add Attendance */}
-        <Dialog
-          open={!!addAttendanceDialog}
-          onOpenChange={(o) => !o && setAddAttendanceDialog(null)}
-        >
-          <DialogContent className="bg-slate-900 border-sky-900/50 text-slate-100 max-w-sm rounded-xl">
-            <DialogHeader>
-              <DialogTitle>Add Attendance</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3 mt-2">
-              <SearchableSelect
-                value={attClientId}
-                onValueChange={setAttClientId}
-                options={clients.map((c) => ({ value: c.id, label: c.name }))}
-                placeholder="Select Client"
-                searchPlaceholder="Search client…"
-                emptyText="No client found."
-              />
-              <SearchableSelect
-                value={attEmployeeId}
-                onValueChange={setAttEmployeeId}
-                options={employees
-                  .filter(
-                    (e) =>
-                      !getRecord(
-                        addAttendanceDialog?.date ?? "",
-                      ).absentees.includes(e.id),
-                  )
-                  .map((e) => ({ value: e.id, label: e.name }))}
-                placeholder="Select Employee"
-                searchPlaceholder="Search employee…"
-                emptyText="No employee found."
-              />
-              <SearchableSelect
-                value={attShift}
-                onValueChange={(v) => setAttShift(v as "day" | "night" | "half")}
-                options={[
-                  { value: "day", label: "Day Shift", icon: <Sun className="w-3.5 h-3.5 text-amber-400" /> },
-                  { value: "night", label: "Night Shift", icon: <Moon className="w-3.5 h-3.5 text-indigo-400" /> },
-                  { value: "half", label: "Half Day", icon: <Sun className="w-3.5 h-3.5 text-amber-600 opacity-75" /> },
-                ]}
-                placeholder="Select Shift"
-                searchPlaceholder="Search shift…"
-              />
-            </div>
-            <DialogFooter className="mt-4">
-              <Button
-                variant="ghost"
-                className="text-slate-400"
-                onClick={() => setAddAttendanceDialog(null)}
-              >
-                Cancel
-              </Button>
-              <Button
-                className="bg-emerald-700 hover:bg-emerald-600 text-white"
-                disabled={!attClientId || !attEmployeeId}
-                onClick={addAttendance}
-              >
-                Assign
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
 
-        {/* Add Absentee */}
-        <Dialog
-          open={!!addAbsenteeDialog}
-          onOpenChange={(o) => !o && setAddAbsenteeDialog(null)}
-        >
-          <DialogContent className="bg-slate-900 border-sky-900/50 text-slate-100 max-w-sm rounded-xl">
-            <DialogHeader>
-              <DialogTitle>
-                Mark Absent —{" "}
-                {addAbsenteeDialog && parseDateLabel(addAbsenteeDialog.date)}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="mt-2">
-              <SearchableSelect
-                value={absenteeId}
-                onValueChange={setAbsenteeId}
-                options={employees
-                  .filter((e) => {
-                    const record = getRecord(addAbsenteeDialog?.date ?? "");
-                    const isAbsent = record.absentees.includes(e.id);
-                    const isPresent = record.clients.some((cl) =>
-                      cl.employees.some((emp) => emp.employeeId === e.id),
-                    );
-                    return !isAbsent && !isPresent;
-                  })
-                  .map((e) => ({ value: e.id, label: e.name }))}
-                placeholder="Select Employee"
-                searchPlaceholder="Search employee…"
-                emptyText="No employee found."
-              />
-            </div>
-            <DialogFooter className="mt-4">
-              <Button
-                variant="ghost"
-                className="text-slate-400"
-                onClick={() => setAddAbsenteeDialog(null)}
-              >
-                Cancel
-              </Button>
-              <Button
-                className="bg-rose-700 hover:bg-rose-600 text-white"
-                disabled={!absenteeId}
-                onClick={addAbsentee}
-              >
-                Mark Absent
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+
+        {/* Day Edit Dialog (Drag & Drop) */}
+        {editDayDialog && (
+          <DayAttendanceEditor
+            open={!!editDayDialog}
+            date={editDayDialog}
+            clients={clients}
+            employees={employees}
+            record={getRecord(editDayDialog)}
+            onClose={() => setEditDayDialog(null)}
+            onAssign={(clientId, employeeIds, shift) => handleAssign(editDayDialog, clientId, employeeIds, shift)}
+            onRemoveAssignment={(clientId, employeeId, shift) => removeAssignment(editDayDialog, clientId, employeeId, shift)}
+            onMarkAbsent={(employeeId) => {
+              if (getRecord(editDayDialog).absentees.includes(employeeId)) return;
+              updateRecord(editDayDialog, (r) => ({
+                ...r,
+                absentees: [...r.absentees, employeeId],
+              }));
+            }}
+            onRemoveAbsentee={(employeeId) => removeAbsentee(editDayDialog, employeeId)}
+          />
+        )}
 
         {/* Clear Confirmation */}
         <AlertDialog
