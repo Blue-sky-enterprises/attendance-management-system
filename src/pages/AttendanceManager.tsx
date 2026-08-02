@@ -82,6 +82,7 @@ export default function AttendanceManager() {
   const selectedYear = now.getFullYear();
   const todayStr = formatDate(now.getFullYear(), now.getMonth(), now.getDate());
   const [lockedDates, setLockedDates] = useState<Record<string, boolean>>({});
+  const [shakingLock, setShakingLock] = useState<string | null>(null);
 
 
 
@@ -1581,20 +1582,24 @@ export default function AttendanceManager() {
                             >
                             {/* Left: Lock + Date + Locked pill */}
                             <div className="flex items-center gap-2 min-w-0">
-                              {!isLocked && !outdatedRecord && (
+                              {!outdatedRecord && (
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <Button
                                       size="icon"
                                       variant="ghost"
-                                      className="h-7 w-7 rounded-lg shrink-0 text-[var(--indigo-400)] hover:text-[var(--indigo-500)] hover:bg-[var(--accent-glow)] transition-all duration-200 hover:scale-110"
+                                      className={`h-7 w-7 rounded-lg shrink-0 transition-all duration-200 hover:scale-110 ${
+                                        isLocked
+                                          ? "text-[var(--accent-500)] hover:text-[var(--accent-400)] hover:bg-[var(--accent-glow)]"
+                                          : "text-[var(--indigo-400)] hover:text-[var(--indigo-500)] hover:bg-[var(--accent-glow)]"
+                                      } ${shakingLock === rec.date ? "animate-shake text-red-400 scale-150" : ""}`}
                                       onClick={() => toggleLock(rec.date)}
                                     >
-                                      <LockOpen className="w-3.5 h-3.5" />
+                                      {isLocked ? <Lock className="w-3.5 h-3.5" /> : <LockOpen className="w-3.5 h-3.5" />}
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent className="bg-slate-800 text-slate-200 text-xs border-sky-900/50">
-                                    Lock this date
+                                    {isLocked ? "Unlock this date" : "Lock this date"}
                                   </TooltipContent>
                                 </Tooltip>
                               )}
@@ -1698,42 +1703,8 @@ export default function AttendanceManager() {
                             </div>
                           </CardHeader>
 
-                          {/* Body — collapsed when locked, shows suitcase lock UI */}
-                          {isLocked ? (
-                            <CardContent className="pt-5 pb-5 flex flex-col items-center justify-center gap-3.5">
-                              {/* Suitcase lock visual */}
-                              <div className="flex flex-col items-center gap-2.5">
-                                <div className="relative flex items-center justify-center w-14 h-14 rounded-2xl attendance-lock-icon">
-                                  {/* Lock shackle (top arc) */}
-                                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-6 h-3.5 rounded-t-full border-[2.5px] border-[var(--border-accent)] border-b-0" />
-                                  {/* Lock body icon */}
-                                  <Lock className="w-6 h-6 text-[var(--accent-500)] drop-shadow-md" />
-                                </div>
-                                <p className="text-[11px] text-[var(--text-secondary)] font-semibold tracking-wider uppercase">
-                                  Date is locked
-                                </p>
-                              </div>
-
-                              {/* Unlock button */}
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-8 text-xs px-3.5 rounded-lg attendance-unlock-btn transition-all gap-1.5 font-medium"
-                                    onClick={() => toggleLock(rec.date)}
-                                  >
-                                    <LockOpen className="w-3.5 h-3.5" />
-                                    Unlock to edit
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent className="bg-slate-800 text-slate-200 text-xs border-sky-900/50">
-                                  Unlock this date to make changes
-                                </TooltipContent>
-                              </Tooltip>
-                            </CardContent>
-                          ) : (
-                            <CardContent className="space-y-3 pt-3.5 px-3.5 pb-3.5">
+                          {/* Body — always show data, but restrict actions when locked */}
+                          <CardContent className={`space-y-3 pt-3.5 px-3.5 pb-3.5 ${isLocked ? "opacity-90" : ""}`}>
                               {clientsToShow.length === 0 && rec.absentees.length === 0 ? (
                                 <div className="flex items-center justify-center py-4">
                                   <p className="text-xs text-[var(--text-muted)] italic">{t('attendance.no_records')}</p>
@@ -1776,6 +1747,12 @@ export default function AttendanceManager() {
                                                         : "attendance-badge-day"
                                                     }`}
                                                     onClick={() => {
+                                                      if (isLocked) {
+                                                        addToast("Date is locked. Unlock to modify.", "error");
+                                                        setShakingLock(rec.date);
+                                                        setTimeout(() => setShakingLock(null), 500);
+                                                        return;
+                                                      }
                                                       if (outdatedRecord) {
                                                         addToast("Clear the data first before modifying attendance.", "error");
                                                         return;
@@ -1831,6 +1808,12 @@ export default function AttendanceManager() {
                                               key={empId}
                                               className="text-xs px-2 py-0.5 rounded-md cursor-pointer transition-all font-medium attendance-badge-absent hover:scale-105"
                                               onClick={() => {
+                                                if (isLocked) {
+                                                  addToast("Date is locked. Unlock to modify.", "error");
+                                                  setShakingLock(rec.date);
+                                                  setTimeout(() => setShakingLock(null), 500);
+                                                  return;
+                                                }
                                                 if (outdatedRecord) {
                                                   addToast("Clear the data first before modifying attendance.", "error");
                                                   return;
@@ -1849,7 +1832,6 @@ export default function AttendanceManager() {
                                 </>
                               )}
                             </CardContent>
-                          )}
                         </Card>
 
                     );
