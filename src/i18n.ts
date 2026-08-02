@@ -13,15 +13,25 @@ const resources = {
   },
 };
 
+const savedLanguage = typeof window !== 'undefined' ? (localStorage.getItem('language') || 'en') : 'en';
+
 i18n
   .use(initReactI18next)
   .init({
     resources,
-    lng: 'en',
+    lng: savedLanguage,
     fallbackLng: 'en',
     interpolation: {
       escapeValue: false, // react already safes from xss
     },
   });
+
+i18n.on('languageChanged', (lng) => {
+  try {
+    localStorage.setItem('language', lng);
+  } catch {
+    // ignore
+  }
+});
 
 export default i18n;

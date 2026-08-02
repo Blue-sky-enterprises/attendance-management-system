@@ -1496,38 +1496,38 @@ export default function AttendanceManager() {
                   value={filterClient}
                   onValueChange={setFilterClient}
                   options={[
-                    { value: "all", label: "All Clients" },
+                    { value: "all", label: t("attendance.all_clients") },
                     ...clients.map((c) => ({ value: c.id, label: c.name })),
                   ]}
-                  placeholder="All Clients"
-                  searchPlaceholder="Search clients…"
-                  emptyText="No clients found."
+                  placeholder={t("attendance.all_clients")}
+                  searchPlaceholder={t("attendance.search_clients")}
+                  emptyText={t("attendance.no_clients")}
                   className="w-full sm:w-44"
                 />
                 <SearchableSelect
                   value={filterEmployee}
                   onValueChange={setFilterEmployee}
                   options={[
-                    { value: "all", label: "All Employees" },
+                    { value: "all", label: t("attendance.all_employees") },
                     ...employees.map((e) => ({ value: e.id, label: e.name })),
                   ]}
-                  placeholder="All Employees"
-                  searchPlaceholder="Search employees…"
-                  emptyText="No employees found."
+                  placeholder={t("attendance.all_employees")}
+                  searchPlaceholder={t("attendance.search_employees")}
+                  emptyText={t("attendance.no_employees")}
                   className="w-full sm:w-48"
                 />
                 <SearchableSelect
                   value={filterShift}
                   onValueChange={setFilterShift}
                   options={[
-                    { value: "all", label: "All Shifts" },
-                    { value: "day", label: "Day", icon: <Sun className="w-3 h-3 text-amber-400" /> },
-                    { value: "night", label: "Night", icon: <Moon className="w-3 h-3 text-indigo-400" /> },
-                    { value: "half", label: "Half Day", icon: <Sun className="w-3 h-3 text-amber-600 opacity-75" /> },
+                    { value: "all", label: t("attendance.all_shifts") },
+                    { value: "day", label: t("attendance.day"), icon: <Sun className="w-3 h-3 text-amber-400" /> },
+                    { value: "night", label: t("attendance.night"), icon: <Moon className="w-3 h-3 text-indigo-400" /> },
+                    { value: "half", label: t("attendance.half_day"), icon: <Sun className="w-3 h-3 text-amber-600 opacity-75" /> },
                   ]}
-                  placeholder="All Shifts"
-                  searchPlaceholder="Search shifts…"
-                  emptyText="No shifts found."
+                  placeholder={t("attendance.all_shifts")}
+                  searchPlaceholder={t("attendance.search_shifts")}
+                  emptyText={t("attendance.no_shifts")}
                   className="w-full sm:w-36"
                 />
                 {(filterClient !== "all" ||
@@ -1654,7 +1654,7 @@ export default function AttendanceManager() {
   }}
 >
   <Edit2 className="w-3 h-3 mr-0.5" />
-  Manage
+  {t("attendance.manage")}
 </Button>
 
                                   <div className="w-px h-5 bg-gradient-to-b from-transparent via-sky-800/50 to-transparent mx-1" />
@@ -2903,6 +2903,7 @@ export default function AttendanceManager() {
             clients={clients}
             employees={employees}
             record={getRecord(editDayDialog)}
+            isLocked={lockedDates[editDayDialog] || false}
             onClose={() => setEditDayDialog(null)}
             onAssign={(clientId, employeeIds, shift) => handleAssign(editDayDialog, clientId, employeeIds, shift)}
             onRemoveAssignment={(clientId, employeeId, shift) => removeAssignment(editDayDialog, clientId, employeeId, shift)}
@@ -2914,6 +2915,14 @@ export default function AttendanceManager() {
               }));
             }}
             onRemoveAbsentee={(employeeId) => removeAbsentee(editDayDialog, employeeId)}
+            onClearDay={() => {
+              updateRecord(editDayDialog, (r) => ({
+                ...r,
+                clients: [],
+                absentees: [],
+              }));
+              addToast("Attendance cleared for this day", "info");
+            }}
           />
         )}
 

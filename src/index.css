@@ -223,14 +223,21 @@
 }
 
 .attendance-badge-night {
-  background: linear-gradient(to bottom right, var(--indigo-500), var(--indigo-700));
-  color: #fff;
-  border: 1px solid var(--border-default);
+  background: linear-gradient(to bottom right, #6366f1, #4338ca);
+  color: #ffffff !important;
+  border: 1px solid rgba(99, 102, 241, 0.4);
+}
+
+[data-theme="light"] .attendance-badge-night {
+  background: linear-gradient(to bottom right, #4f46e5, #3730a3) !important;
+  color: #ffffff !important;
+  border: 1px solid #312e81 !important;
+  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.25);
 }
 
 .attendance-badge-night:hover {
-  filter: brightness(1.1);
-  box-shadow: 0 2px 8px rgba(97, 112, 158, 0.2);
+  filter: brightness(1.15);
+  box-shadow: 0 3px 10px rgba(99, 102, 241, 0.35);
 }
 
 .attendance-badge-half {
@@ -1451,4 +1458,256 @@ body { margin: 0; }
 
 .animate-shake {
   animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+/* ─── Select Attendance Tab ──────────────────────────────────────────────────── */
+
+/* Mode Toggle (Drag/Select) */
+.mode-toggle {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-default);
+}
+.mode-toggle__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 14px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  color: var(--text-muted);
+  background: transparent;
+}
+.mode-toggle__btn--active {
+  background: linear-gradient(135deg, var(--accent-500), var(--accent-600));
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(114, 136, 174, 0.35);
+}
+.mode-toggle__btn:not(.mode-toggle__btn--active):hover {
+  background: var(--accent-glow);
+  color: var(--text-secondary);
+}
+
+/* Shift Toggle (Day/Night) */
+.shift-toggle {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-default);
+}
+.shift-toggle__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 16px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  color: var(--text-muted);
+  background: transparent;
+}
+.shift-toggle__btn--day {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  border-color: rgba(245, 158, 11, 0.4);
+  box-shadow: 0 2px 12px rgba(245, 158, 11, 0.3), inset 0 1px 0 rgba(255,255,255,0.15);
+}
+.shift-toggle__btn--night {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: #fff;
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 0 2px 12px rgba(99, 102, 241, 0.3), inset 0 1px 0 rgba(255,255,255,0.15);
+}
+.shift-toggle__btn:not(.shift-toggle__btn--day):not(.shift-toggle__btn--night):hover {
+  background: var(--accent-glow);
+  color: var(--text-secondary);
+}
+
+/* Send Button */
+.send-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 20px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent-500), var(--accent-600));
+  box-shadow: 0 2px 10px var(--accent-glow);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.send-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px var(--accent-glow), 0 0 24px var(--accent-glow);
+}
+.send-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+.send-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.send-btn--sending {
+  animation: send-pulse 0.8s ease-in-out;
+}
+
+@keyframes send-pulse {
+  0% { transform: scale(1); }
+  30% { transform: scale(0.95); }
+  60% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+/* Client Card in Select Tab */
+.select-client-card {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border-default);
+  background: var(--surface-1);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.select-client-card:hover {
+  border-color: var(--border-hover);
+  background: var(--surface-card-hover);
+}
+.select-client-card--selected {
+  border-color: var(--accent-500);
+  background: var(--accent-glow);
+  box-shadow: 0 0 0 1px var(--accent-500), 0 2px 12px var(--accent-glow);
+}
+[data-theme="light"] .select-client-card--selected {
+  background: rgba(75, 86, 148, 0.1);
+  border-color: #4b5694;
+  box-shadow: 0 0 0 1px #4b5694, 0 2px 8px rgba(75,86,148,0.18);
+}
+
+/* Client highlight flash on assignment */
+@keyframes client-flash {
+  0% { box-shadow: 0 0 0 1px var(--accent-500), 0 2px 12px var(--accent-glow); }
+  50% { box-shadow: 0 0 0 3px var(--accent-400), 0 4px 24px var(--accent-glow), 0 0 40px var(--accent-glow); }
+  100% { box-shadow: 0 0 0 1px var(--accent-500), 0 2px 12px var(--accent-glow); }
+}
+.select-client-card--flash {
+  animation: client-flash 0.6s ease-in-out 2;
+}
+
+/* Employee Card in Select Tab */
+.select-emp-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-default);
+  background: var(--surface-1);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+}
+.select-emp-card:hover:not(.select-emp-card--disabled) {
+  border-color: var(--border-hover);
+  background: var(--surface-card-hover);
+}
+.select-emp-card--selected {
+  border-color: var(--accent-500);
+  background: var(--accent-glow);
+  box-shadow: 0 0 0 1px var(--accent-500);
+}
+[data-theme="light"] .select-emp-card--selected {
+  background: rgba(75, 86, 148, 0.1);
+  border-color: #4b5694;
+  box-shadow: 0 0 0 1px #4b5694;
+}
+.select-emp-card--disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.select-emp-card__checkbox {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  border: 2px solid var(--border-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+.select-emp-card__checkbox--checked {
+  background: linear-gradient(135deg, var(--accent-500), var(--accent-600));
+  border-color: var(--accent-500);
+}
+.select-emp-card__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.select-emp-card__badge--day {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+.select-emp-card__badge--night {
+  background: rgba(99, 102, 241, 0.12);
+  color: #818cf8;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+.select-emp-card__badge--locked {
+  background: rgba(212, 106, 106, 0.12);
+  color: var(--error);
+  border: 1px solid rgba(212, 106, 106, 0.3);
+}
+
+/* Client badge counts */
+.client-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+.client-badge--total {
+  background: var(--accent-glow);
+  color: var(--accent-400);
+  border: 1px solid var(--border-accent);
+}
+.client-badge--day {
+  background: rgba(245, 158, 11, 0.1);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+.client-badge--night {
+  background: rgba(99, 102, 241, 0.1);
+  color: #a5b4fc;
+  border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+/* Flying dot animation */
+@keyframes fly-dot-trail {
+  0% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.3); }
 }

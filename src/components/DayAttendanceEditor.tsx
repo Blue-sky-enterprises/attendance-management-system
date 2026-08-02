@@ -1,13 +1,25 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Sun, Moon, UserX, Plus } from "lucide-react";
+import { Sun, Moon, UserX, Plus, GripVertical, MousePointerClick, Trash2 } from "lucide-react";
 import type { Client, Employee, DailyAttendance } from "@/types";
 import { SearchableSelect } from "./ui/searchable-select";
 import { MultiSelect } from "./ui/multi-select";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import { SelectAttendanceTab } from "./SelectAttendanceTab";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface DayAttendanceEditorProps {
   open: boolean;
@@ -15,11 +27,13 @@ interface DayAttendanceEditorProps {
   clients: Client[];
   employees: Employee[];
   record: DailyAttendance;
+  isLocked?: boolean;
   onClose: () => void;
   onAssign: (clientId: string, employeeIds: string[], shift: "day" | "night" | "half") => void;
   onRemoveAssignment: (clientId: string, employeeId: string, shift: "day" | "night" | "half") => void;
   onMarkAbsent: (employeeId: string) => void;
   onRemoveAbsentee: (employeeId: string) => void;
+  onClearDay: () => void;
 }
 
 function getTitleDateInfo(dateStr: string) {
@@ -52,12 +66,19 @@ export function DayAttendanceEditor({
   clients,
   employees,
   record,
+  isLocked = false,
   onClose,
   onAssign,
   onRemoveAssignment,
   onMarkAbsent,
   onRemoveAbsentee,
+  onClearDay,
 }: DayAttendanceEditorProps) {
+  // Mode: "drag" or "select"
+  const [mode, setMode] = useState<"drag" | "select">("select");
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const { t } = useTranslation();
+
   // Drag state
   const [draggedEmpId, setDraggedEmpId] = useState<string | null>(null);
 
@@ -102,8 +123,8 @@ export function DayAttendanceEditor({
         const existingClientName = existingClient
           ? (clients.find((c) => c.id === existingClient.clientId)?.name ?? "another client")
           : "another client";
-        const shiftLabelMl = dropShift === "day" ? "പകൽ" : dropShift === "night" ? "രാത്രി" : "ഹാഫ് ഡേ";
-        showError(`${empName} ഇന്ന് ${existingClientName}-ൽ ${shiftLabelMl} ഷിഫ്റ്റിൽ ഉണ്ട്. മറ്റൊരു ഷിഫ്റ്റ് തിരഞ്ഞെടുക്കുക.`);
+        const shiftLabel = dropShift === "day" ? t('manage_modal.day_shift') : dropShift === "night" ? t('manage_modal.night_shift') : t('manage_modal.half_day');
+        showError(t('manage_modal.already_on_shift', { employee: empName, client: existingClientName, shift: shiftLabel }));
         setDraggedEmpId(null);
         return;
       }
@@ -138,54 +159,100 @@ export function DayAttendanceEditor({
   );
 
   const dateInfo = getTitleDateInfo(date);
+  const hasData = record.clients.some((c) => c.employees.length > 0) || record.absentees.length > 0;
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-5xl w-full h-[85vh] flex flex-col bg-slate-900 border-sky-900/50 text-slate-100 p-0 overflow-hidden">
-        <DialogHeader className="p-4 border-b border-sky-900/50 bg-slate-950/50 shrink-0">
-          <div className="flex items-center gap-4">
-            <DialogTitle className="text-xl">
-              Manage Attendance for {dateInfo.dayStr}
-            </DialogTitle>
-            <div className="text-lg font-medium text-slate-300 bg-sky-950/40 px-3 py-1 rounded-lg border border-sky-900/40">
-              {dateInfo.weekday}
+      <DialogContent className="max-w-7xl w-full h-[90vh] flex flex-col bg-slate-50 text-slate-900 border-slate-200 dark:bg-slate-900 dark:border-sky-900/50 dark:text-slate-100 p-0 overflow-hidden shadow-2xl">
+        <DialogHeader className="p-4 border-b border-slate-200 bg-slate-100/80 dark:border-sky-900/50 dark:bg-slate-950/50 shrink-0">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <DialogTitle className="text-xl">
+                {t('manage_modal.title')} {dateInfo.dayStr}
+              </DialogTitle>
+              <div className="text-sm font-medium text-slate-700 bg-slate-200/80 px-3 py-1 rounded-lg border border-slate-300 dark:text-slate-300 dark:bg-sky-950/40 dark:border-sky-900/40">
+                {dateInfo.weekday}
+              </div>
+
+              {/* Mode Toggle */}
+              <div className="mode-toggle">
+                <button
+                  className={`mode-toggle__btn ${mode === "drag" ? "mode-toggle__btn--active" : ""}`}
+                  onClick={() => setMode("drag")}
+                >
+                  <GripVertical className="w-3.5 h-3.5" />
+                  {t('manage_modal.drag')}
+                </button>
+                <button
+                  className={`mode-toggle__btn ${mode === "select" ? "mode-toggle__btn--active" : ""}`}
+                  onClick={() => setMode("select")}
+                >
+                  <MousePointerClick className="w-3.5 h-3.5" />
+                  {t('manage_modal.select')}
+                </button>
+              </div>
             </div>
+
+            {hasData && (
+              <Button
+                variant="destructive"
+                size="sm"
+                className="mr-8 flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white dark:bg-rose-950/40 dark:hover:bg-rose-900/60 dark:text-rose-300 dark:border dark:border-rose-800/50 shadow-sm transition-colors"
+                disabled={isLocked}
+                onClick={() => setShowClearConfirm(true)}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                {t('manage_modal.clear_attendance')}
+              </Button>
+            )}
           </div>
-          <div className="flex items-center gap-4 mt-3">
-            <span className="text-sm text-slate-400">Default shift for drag & drop:</span>
-            <SearchableSelect
-              value={dropShift}
-              onValueChange={(v) => setDropShift(v as "day" | "night" | "half")}
-              options={[
-                { value: "day", label: "Day Shift", icon: <Sun className="w-3.5 h-3.5 text-amber-400" /> },
-                { value: "night", label: "Night Shift", icon: <Moon className="w-3.5 h-3.5 text-indigo-400" /> },
-                { value: "half", label: "Half Day", icon: <Sun className="w-3.5 h-3.5 text-amber-600 opacity-75" /> },
-              ]}
-              className="w-40"
-            />
-          </div>
+          {mode === "drag" && (
+            <div className="flex items-center gap-4 mt-3">
+              <span className="text-sm text-slate-400">{t('manage_modal.default_shift')}</span>
+              <SearchableSelect
+                value={dropShift}
+                onValueChange={(v) => setDropShift(v as "day" | "night" | "half")}
+                options={[
+                  { value: "day", label: t('manage_modal.day_shift'), icon: <Sun className="w-3.5 h-3.5 text-amber-400" /> },
+                  { value: "night", label: t('manage_modal.night_shift'), icon: <Moon className="w-3.5 h-3.5 text-indigo-400" /> },
+                  { value: "half", label: t('manage_modal.half_day'), icon: <Sun className="w-3.5 h-3.5 text-amber-600 opacity-75" /> },
+                ]}
+                className="w-40"
+              />
+            </div>
+          )}
         </DialogHeader>
 
         {/* Error Banner */}
         {errorMsg && (
-          <div className="mx-4 mb-0 mt-2 flex items-center gap-2 rounded-lg border border-rose-800/50 bg-rose-950/40 px-3 py-2 text-xs text-rose-300 animate-in fade-in slide-in-from-top-1 duration-200 shrink-0">
-            <span className="text-rose-400 text-base leading-none">⚠</span>
+          <div className="mx-4 mb-0 mt-2 flex items-center gap-2 rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-xs text-rose-700 dark:border-rose-800/50 dark:bg-rose-950/40 dark:text-rose-300 animate-in fade-in slide-in-from-top-1 duration-200 shrink-0">
+            <span className="text-rose-500 dark:text-rose-400 text-base leading-none">⚠</span>
             {errorMsg}
           </div>
         )}
 
+        {mode === "select" ? (
+          <SelectAttendanceTab
+            clients={clients}
+            employees={employees}
+            record={record}
+            onAssign={onAssign}
+            onRemoveAssignment={onRemoveAssignment}
+          />
+        ) : (
+        <>
         <div className="flex flex-1 overflow-hidden">
           {/* Left Panel: Employees */}
-          <div className="w-1/4 border-r border-sky-900/50 bg-slate-950/30 flex flex-col">
-            <div className="p-3 border-b border-sky-900/30 font-medium text-slate-300 text-sm">
-              Employees ({filteredEmployees.length})
+          <div className="w-1/4 border-r border-slate-200 bg-slate-100/60 dark:border-sky-900/50 dark:bg-slate-950/30 flex flex-col">
+            <div className="p-3 border-b border-slate-200 text-slate-700 dark:border-sky-900/30 dark:text-slate-300 font-medium text-sm">
+              {t('manage_modal.employees')} ({filteredEmployees.length})
             </div>
-            <div className="p-2 border-b border-sky-900/30">
+            <div className="p-2 border-b border-slate-200 dark:border-sky-900/30">
               <Input
-                placeholder="Search employees..."
+                placeholder={t('manage_modal.search_employees')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-8 text-xs bg-slate-900/50 border-sky-900/50"
+                className="h-8 text-xs bg-white border-slate-200 dark:bg-slate-900/50 dark:border-sky-900/50"
               />
             </div>
             <ScrollArea className="flex-1 p-3">
@@ -252,20 +319,20 @@ export function DayAttendanceEditor({
                 })}
                 {filteredEmployees.length === 0 && (
                   <div className="text-center text-xs text-slate-500 py-4">
-                    {searchQuery ? "No matches found." : "All employees are assigned or absent."}
+                    {searchQuery ? t('manage_modal.no_matches') : t('manage_modal.all_assigned_absent')}
                   </div>
                 )}
               </div>
             </ScrollArea>
             {assignedEmployeeIds.size > 0 && (
-              <div className="p-2 border-t border-sky-900/30 text-[10px] text-slate-500 flex items-center gap-1.5">
-                <span className="text-sky-400">●</span> Already assigned — drag again for another shift
+              <div className="p-2 border-t border-slate-200 text-slate-500 dark:border-sky-900/30 dark:text-slate-500 text-[10px] flex items-center gap-1.5">
+                <span className="text-sky-500 dark:text-sky-400">●</span> {t('manage_modal.already_assigned_hint')}
               </div>
             )}
           </div>
 
           {/* Right Panel: Clients & Absent */}
-          <div className="w-3/4 flex flex-col bg-slate-900/50 overflow-hidden">
+          <div className="w-3/4 flex flex-col bg-white dark:bg-slate-900/50 overflow-hidden">
             <ScrollArea className="flex-1 p-4">
               <div className="grid grid-cols-2 gap-4">
                 {/* Absent Bucket */}
@@ -273,11 +340,13 @@ export function DayAttendanceEditor({
                   onDragOver={handleDragOver}
                   onDrop={handleDropOnAbsent}
                   className={`p-4 rounded-xl border-2 border-dashed transition-colors col-span-2 sm:col-span-1 ${
-                    draggedEmpId ? "border-rose-700/50 bg-rose-950/20" : "border-slate-800 bg-slate-900"
+                    draggedEmpId
+                      ? "border-rose-400 bg-rose-100/60 dark:border-rose-700/50 dark:bg-rose-950/20"
+                      : "border-rose-200 bg-rose-50/50 dark:border-slate-800 dark:bg-slate-900"
                   }`}
                 >
-                  <h3 className="font-medium text-rose-400 mb-3 flex items-center gap-2">
-                    <UserX className="w-4 h-4" /> Absentees ({record.absentees.length})
+                  <h3 className="font-medium text-rose-600 dark:text-rose-400 mb-3 flex items-center gap-2">
+                    <UserX className="w-4 h-4" /> {t('manage_modal.absentees')} ({record.absentees.length})
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {record.absentees.map((id) => {
@@ -286,7 +355,7 @@ export function DayAttendanceEditor({
                         <Badge
                           key={id}
                           variant="outline"
-                          className="bg-rose-950/30 text-rose-300 border-rose-800/50 cursor-pointer hover:bg-rose-900/50"
+                          className="bg-rose-100 text-rose-700 border-rose-300 cursor-pointer hover:bg-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/50 dark:hover:bg-rose-900/50 transition-colors"
                           onClick={() => onRemoveAbsentee(id)}
                         >
                           {empName} &times;
@@ -294,7 +363,7 @@ export function DayAttendanceEditor({
                       );
                     })}
                     {record.absentees.length === 0 && (
-                      <span className="text-xs text-slate-500">Drag employees here to mark absent</span>
+                      <span className="text-xs text-rose-400/80 dark:text-slate-500">{t('manage_modal.drag_absent')}</span>
                     )}
                   </div>
                 </div>
@@ -333,7 +402,7 @@ export function DayAttendanceEditor({
                             border: "1px solid var(--border-accent)",
                           }}
                         >
-                          {assignedCount} duties
+                          {assignedCount} {t('manage_modal.duties')}
                         </span>
                       </h3>
 
@@ -400,7 +469,7 @@ export function DayAttendanceEditor({
                             className="text-xs"
                             style={{ color: "var(--text-muted)" }}
                           >
-                            Drag employees here to assign
+                            {t('manage_modal.drag_assign')}
                           </span>
                         )}
                       </div>
@@ -411,7 +480,35 @@ export function DayAttendanceEditor({
             </ScrollArea>
           </div>
         </div>
+        </>
+        )}
       </DialogContent>
+
+      {/* Clear Confirmation AlertDialog */}
+      <AlertDialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
+        <AlertDialogContent className="bg-white border-slate-200 text-slate-900 dark:bg-slate-900 dark:border-sky-900/50 dark:text-slate-100 rounded-xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('manage_modal.clear_confirm_title')}</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-500 dark:text-slate-400">
+              {t('manage_modal.clear_confirm_desc', { date: dateInfo.dayStr })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 dark:border-sky-900/30">
+              {t('manage_modal.cancel')}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-rose-600 text-white hover:bg-rose-700"
+              onClick={() => {
+                onClearDay();
+                setShowClearConfirm(false);
+              }}
+            >
+              {t('manage_modal.yes_clear')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

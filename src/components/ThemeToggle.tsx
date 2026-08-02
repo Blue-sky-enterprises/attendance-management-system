@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "@/hooks";
 
 export function ThemeToggle() {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const isDark = theme === "dark";
 
   return (
@@ -26,7 +26,7 @@ export function ThemeToggle() {
         return (
          <button
   key={mode}
-  onClick={toggleTheme}
+  onClick={() => setTheme(mode as "light" | "dark")}
   aria-label={label}
   aria-pressed={active}
   className={[
