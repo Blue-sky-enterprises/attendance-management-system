@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -1471,8 +1472,15 @@ export default function AttendanceManager() {
 
             {/* ══ ATTENDANCE TAB ══ */}
             <TabsContent value="attendance">
+              <AnimatePresence>
               {outdatedRecord && (
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 mb-5 rounded-xl bg-amber-950/20 border border-amber-800/40 text-amber-200 text-xs">
+                <motion.div
+                  initial={{ opacity: 0, y: -12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -12 }}
+                  transition={{ duration: 0.25 }}
+                  className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 mb-5 rounded-xl bg-amber-950/20 border border-amber-800/40 text-amber-200 text-xs"
+                >
                   <div className="flex items-center gap-2">
                     <AlertTriangle className="w-4.5 h-4.5 text-amber-400 shrink-0" />
                     <span>
@@ -1487,8 +1495,9 @@ export default function AttendanceManager() {
                   >
                     {t('attendance.clear_attendance')}
                   </Button>
-                </div>
+                </motion.div>
               )}
+              </AnimatePresence>
 
               {/* Filters */}
               <div className="flex flex-wrap gap-2 mb-5">
@@ -1549,21 +1558,40 @@ export default function AttendanceManager() {
               </div>
 
               {filteredRecords.length === 0 ? (
-                <div className="text-center py-20 text-slate-500">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.35 }}
+                  className="text-center py-20 text-slate-500"
+                >
                   <CalendarDays className="w-12 h-12 mx-auto mb-3 opacity-30" />
                   <p>No attendance records match the filters.</p>
-                </div>
+                </motion.div>
               ) : (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+                <motion.div
+                  className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
+                  initial="hidden"
+                  animate="visible"
+                  variants={{
+                    visible: { transition: { staggerChildren: 0.05 } },
+                    hidden: {},
+                  }}
+                >
                   {filteredRecords.map((rec) => {
                     const isLocked = lockedDates[rec.date] && !outdatedRecord;
                     const clientsToShow =
                       filterClient !== "all"
                         ? rec.clients.filter((c) => c.clientId === filterClient)
                         : rec.clients;
-                    return (
-                          <Card
-                            key={rec.date}
+                  return (
+                        <motion.div
+                          key={rec.date}
+                          variants={{
+                            hidden: { opacity: 0, y: 20, scale: 0.96 },
+                            visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 260, damping: 22 } },
+                          }}
+                        >
+                        <Card
                             className={`group/card relative border transition-all duration-300 rounded-2xl overflow-hidden ${
                               isLocked ? "attendance-card-locked" : "attendance-card"
                             }`}
@@ -1833,10 +1861,11 @@ export default function AttendanceManager() {
                               )}
                             </CardContent>
                         </Card>
+                        </motion.div>
 
                     );
                   })}
-                </div>
+                </motion.div>
               )}
             </TabsContent>
 
@@ -1861,15 +1890,32 @@ export default function AttendanceManager() {
                 </Button>
               </div>
               {filteredClients.length === 0 ? (
-                <div className="text-center py-20 text-slate-500">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-center py-20 text-slate-500"
+                >
                   <Building2 className="w-12 h-12 mx-auto mb-3 opacity-30" />
                   <p>No clients yet.</p>
-                </div>
+                </motion.div>
               ) : (
-                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <motion.div
+                  className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                  initial="hidden"
+                  animate="visible"
+                  variants={{ visible: { transition: { staggerChildren: 0.04 } }, hidden: {} }}
+                >
                   {filteredClients.map((c) => (
-                    <Card
+                    <motion.div
                       key={c.id}
+                      variants={{
+                        hidden: { opacity: 0, y: 16, scale: 0.97 },
+                        visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 280, damping: 22 } },
+                      }}
+                      whileHover={{ y: -2, boxShadow: "0 8px 24px rgba(0,0,0,0.15)" }}
+                      transition={{ duration: 0.18 }}
+                    >
+                    <Card
                       className="list-card flex flex-row items-center justify-between px-4 py-3 rounded-xl"
                     >
                       <div className="flex items-center gap-2 min-w-0">
@@ -1909,8 +1955,9 @@ export default function AttendanceManager() {
                         </Button>
                       </div>
                     </Card>
+                    </motion.div>
                   ))}
-                </div>
+                </motion.div>
               )}
             </TabsContent>
 
@@ -1935,62 +1982,80 @@ export default function AttendanceManager() {
                 </Button>
               </div>
               {filteredEmployees.length === 0 ? (
-                <div className="text-center py-20 text-slate-500">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-center py-20 text-slate-500"
+                >
                   <Users className="w-12 h-12 mx-auto mb-3 opacity-30" />
                   <p>No employees yet.</p>
-                </div>
+                </motion.div>
               ) : (
-                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <motion.div
+                  className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                  initial="hidden"
+                  animate="visible"
+                  variants={{ visible: { transition: { staggerChildren: 0.04 } }, hidden: {} }}
+                >
                   {filteredEmployees.map((e) => {
                     const duties =
                       stats.leaderboard.find((l) => l.id === e.id)?.count ?? 0;
                     return (
-                      <Card
+                      <motion.div
                         key={e.id}
-                        className="list-card flex flex-row items-center justify-between px-4 py-3 rounded-xl"
+                        variants={{
+                          hidden: { opacity: 0, y: 16, scale: 0.97 },
+                          visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 280, damping: 22 } },
+                        }}
+                        whileHover={{ y: -2, boxShadow: "0 8px 24px rgba(0,0,0,0.15)" }}
+                        transition={{ duration: 0.18 }}
                       >
-                        <div className="flex items-center gap-2 min-w-0">
-                         <div
-  className="w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 border border-[var(--border-accent)] shadow-md shadow-[var(--accent-glow)]"
-  style={{
-    background:
-      "linear-gradient(135deg, var(--accent-500) 0%, var(--accent-600) 100%)",
-    color: "var(--primary-foreground)",
-  }}
->
-  {e.name[0]?.toUpperCase()}
-</div>
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium text-[var(--text-primary)] truncate">
-                              {e.name}
-                            </p>
-                            <p className="text-xs text-[var(--text-secondary)]">
-                              {duties} {duties === 1 ? "duty" : "duties"}
-                            </p>
+                        <Card
+                          className="list-card flex flex-row items-center justify-between px-4 py-3 rounded-xl"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div
+                              className="w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 border border-[var(--border-accent)] shadow-md shadow-[var(--accent-glow)]"
+                              style={{
+                                background:
+                                  "linear-gradient(135deg, var(--accent-500) 0%, var(--accent-600) 100%)",
+                                color: "var(--primary-foreground)",
+                              }}
+                            >
+                              {e.name[0]?.toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-[var(--text-primary)] truncate">
+                                {e.name}
+                              </p>
+                              <p className="text-xs text-[var(--text-secondary)]">
+                                {duties} {duties === 1 ? "duty" : "duties"}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex gap-1 shrink-0">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 icon-button-ghost"
-                            onClick={() => openEditEmployee(e)}
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 icon-button-ghost hover:text-[var(--error)]"
-                            onClick={() => setDeleteEmployeeDialog(e)}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
-                        </div>
-                      </Card>
+                          <div className="flex gap-1 shrink-0">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 icon-button-ghost"
+                              onClick={() => openEditEmployee(e)}
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 icon-button-ghost hover:text-[var(--error)]"
+                              onClick={() => setDeleteEmployeeDialog(e)}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        </Card>
+                      </motion.div>
                     );
                   })}
-                </div>
+                </motion.div>
               )}
             </TabsContent>
 
@@ -2075,7 +2140,15 @@ export default function AttendanceManager() {
   </div>
 </TooltipProvider>
               </div>
-              <div className="grid gap-4 grid-cols-2 lg:grid-cols-4 mb-6">
+              <motion.div 
+                className="grid gap-4 grid-cols-2 lg:grid-cols-4 mb-6"
+                initial="hidden"
+                animate="visible"
+                variants={{
+                  visible: { transition: { staggerChildren: 0.05 } },
+                  hidden: {}
+                }}
+              >
                 {[
                   {
                     label: t('analytics.total_clients'),
@@ -2102,22 +2175,34 @@ export default function AttendanceManager() {
                     color: "text-[var(--error)]",
                   },
                 ].map((s) => (
-                  <Card
+                  <motion.div
                     key={s.label}
-                    className="stat-card px-5 py-4 rounded-xl transition-colors hover:border-[var(--border-hover)]"
+                    variants={{
+                      hidden: { opacity: 0, y: 15, scale: 0.96 },
+                      visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 260, damping: 22 } }
+                    }}
                   >
-                    <div className={`${s.color} mb-2`}>{s.icon}</div>
-                    <p className="text-3xl font-bold text-[var(--text-primary)] tabular-nums">
-                      {s.value}
-                    </p>
-                    <p className="text-xs text-[var(--text-secondary)] mt-0.5">{s.label}</p>
-                  </Card>
+                    <Card
+                      className="stat-card px-5 py-4 rounded-xl transition-colors hover:border-[var(--border-hover)]"
+                    >
+                      <div className={`${s.color} mb-2`}>{s.icon}</div>
+                      <p className="text-3xl font-bold text-[var(--text-primary)] tabular-nums">
+                        {s.value}
+                      </p>
+                      <p className="text-xs text-[var(--text-secondary)] mt-0.5">{s.label}</p>
+                    </Card>
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
 
               {/* Fines & Borrowings quick summary in analytics */}
               {(borrowingStats.totalOutstanding > 0 || borrowingStats.totalFines > 0) && (
-                <div className="grid gap-4 grid-cols-2 lg:grid-cols-2 mb-6">
+                <motion.div 
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="grid gap-4 grid-cols-2 lg:grid-cols-2 mb-6"
+                >
                   <Card className="warning-card px-5 py-4 rounded-xl">
                     <div className="text-[var(--warning)] mb-2"><TrendingDown className="w-5 h-5" /></div>
                     <p className="text-3xl font-bold text-[var(--text-primary)] tabular-nums">₹{borrowingStats.totalOutstanding.toLocaleString("en-IN")}</p>
@@ -2128,28 +2213,34 @@ export default function AttendanceManager() {
                     <p className="text-3xl font-bold text-[var(--text-primary)] tabular-nums">₹{borrowingStats.totalFines.toLocaleString("en-IN")}</p>
                     <p className="text-xs text-[var(--text-secondary)] mt-0.5">{t('analytics.total_fines')}</p>
                   </Card>
-                </div>
+                </motion.div>
               )}
 
               {stats.topEmployee && (
-                <Card className="highlight-card mb-6 px-5 py-4 rounded-xl">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-[var(--surface-2)] border border-[var(--border-accent)] flex items-center justify-center">
-                      <Trophy className="w-6 h-6 text-[var(--accent-500)]" />
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.97 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                >
+                  <Card className="highlight-card mb-6 px-5 py-4 rounded-xl">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-[var(--surface-2)] border border-[var(--border-accent)] flex items-center justify-center">
+                        <Trophy className="w-6 h-6 text-[var(--accent-500)]" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-[var(--accent-600)] uppercase tracking-[0.18em] font-semibold">
+                          {t('analytics.top_performer')}
+                        </p>
+                        <p className="text-xl font-bold text-[var(--text-primary)]">
+                          {stats.topEmployee.name}
+                        </p>
+                        <p className="text-sm text-[var(--text-secondary)]">
+                          {stats.topEmployee.count} {t('analytics.duties')}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-[10px] text-[var(--accent-600)] uppercase tracking-[0.18em] font-semibold">
-                        {t('analytics.top_performer')}
-                      </p>
-                      <p className="text-xl font-bold text-[var(--text-primary)]">
-                        {stats.topEmployee.name}
-                      </p>
-                      <p className="text-sm text-[var(--text-secondary)]">
-                        {stats.topEmployee.count} {t('analytics.duties')}
-                      </p>
-                    </div>
-                  </div>
-                </Card>
+                  </Card>
+                </motion.div>
               )}
 
               <Card className="dashboard-card rounded-xl">
@@ -2166,7 +2257,15 @@ export default function AttendanceManager() {
                     </p>
                   ) : (
                     <ScrollArea className="h-[28rem]">
-                      <div className="space-y-2 pr-3">
+                      <motion.div 
+                        className="space-y-2 pr-3"
+                        initial="hidden"
+                        animate="visible"
+                        variants={{
+                          visible: { transition: { staggerChildren: 0.04 } },
+                          hidden: {}
+                        }}
+                      >
                         {stats.leaderboard.map((l, i) => {
                           const rankStyles =
                             i === 0
@@ -2185,8 +2284,12 @@ export default function AttendanceManager() {
                           const hasClients = l.clientDistribution.length > 0;
 
                           return (
-                           <div
+                           <motion.div
                               key={l.id}
+                              variants={{
+                                hidden: { opacity: 0, y: 15 },
+                                visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 260, damping: 22 } }
+                              }}
                               className={`group relative overflow-hidden rounded-2xl border transition-all hover:shadow-lg ${rankStyles}`}
                               style={{
                                 background: "var(--surface-card)",
@@ -2360,10 +2463,10 @@ export default function AttendanceManager() {
                                   </div>
                                 </div>
                               </div>
-                            </div>
+                            </motion.div>
                           );
                         })}
-                      </div>
+                      </motion.div>
                     </ScrollArea>
                   )}
                 </CardContent>
@@ -2388,20 +2491,36 @@ export default function AttendanceManager() {
               </div>
 
               {/* Summary cards */}
-              <div className="grid gap-4 grid-cols-2 lg:grid-cols-4 mb-6">
+              <motion.div 
+                className="grid gap-4 grid-cols-2 lg:grid-cols-4 mb-6"
+                initial="hidden"
+                animate="visible"
+                variants={{
+                  visible: { transition: { staggerChildren: 0.05 } },
+                  hidden: {}
+                }}
+              >
                 {[
                   { label: "Total Borrowed", value: borrowingStats.totalBorrowed, icon: <Wallet className="w-5 h-5" />, color: "text-[var(--warning)]" },
                   { label: "Total Fines", value: borrowingStats.totalFines, icon: <Receipt className="w-5 h-5" />, color: "text-[var(--error)]" },
                   { label: "Outstanding", value: borrowingStats.totalOutstanding, icon: <TrendingDown className="w-5 h-5" />, color: "text-[var(--warning)]" },
                   { label: "Total Settled", value: borrowingStats.totalSettled, icon: <CheckCircle2 className="w-5 h-5" />, color: "text-[var(--success)]" },
                 ].map((s) => (
-                  <Card key={s.label} className={`dashboard-card px-5 py-4 rounded-xl hover:border-[var(--border-hover)] transition-colors`}>
-                    <div className={`${s.color} mb-2`}>{s.icon}</div>
-                    <p className="text-2xl font-bold text-[var(--text-primary)] tabular-nums">₹{s.value.toLocaleString("en-IN")}</p>
-                    <p className="text-xs text-[var(--text-secondary)] mt-0.5">{s.label}</p>
-                  </Card>
+                  <motion.div
+                    key={s.label}
+                    variants={{
+                      hidden: { opacity: 0, y: 15, scale: 0.96 },
+                      visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 260, damping: 22 } }
+                    }}
+                  >
+                    <Card className={`dashboard-card px-5 py-4 rounded-xl hover:border-[var(--border-hover)] transition-colors`}>
+                      <div className={`${s.color} mb-2`}>{s.icon}</div>
+                      <p className="text-2xl font-bold text-[var(--text-primary)] tabular-nums">₹{s.value.toLocaleString("en-IN")}</p>
+                      <p className="text-xs text-[var(--text-secondary)] mt-0.5">{s.label}</p>
+                    </Card>
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
 
               {/* Filters */}
               <div className="flex flex-wrap gap-2 mb-5">
@@ -2465,31 +2584,52 @@ export default function AttendanceManager() {
 
                 if (borrowings.length === 0) {
                   return (
-                    <div className="text-center py-24 text-slate-500">
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="text-center py-24 text-slate-500"
+                    >
                       <Wallet className="w-12 h-12 mx-auto mb-3 opacity-30" />
                       <p className="font-medium">No records yet</p>
                       <p className="text-xs mt-1 text-slate-600">Click "Add Record" to track borrowings or fines</p>
-                    </div>
+                    </motion.div>
                   );
                 }
 
                 if (filtered.length === 0) {
                   return (
-                    <div className="text-center py-16 text-slate-500">
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-center py-16 text-slate-500"
+                    >
                       <Search className="w-8 h-8 mx-auto mb-2 opacity-30" />
                       <p className="text-sm">No records match the filters.</p>
-                    </div>
+                    </motion.div>
                   );
                 }
 
                 return (
-                  <div className="space-y-2">
+                  <motion.div 
+                    className="space-y-2"
+                    initial="hidden"
+                    animate="visible"
+                    variants={{
+                      visible: { transition: { staggerChildren: 0.04 } },
+                      hidden: {}
+                    }}
+                  >
                     {filtered.map((b) => {
                       const empName = employees.find((e) => e.id === b.employeeId)?.name ?? "Unknown";
                       const isFine = b.type === "fine";
                       return (
-                        <div
+                        <motion.div
                           key={b.id}
+                          variants={{
+                            hidden: { opacity: 0, y: 15, scale: 0.98 },
+                            visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 260, damping: 22 } }
+                          }}
+                          whileHover={{ y: -1, boxShadow: "0 6px 18px rgba(0,0,0,0.12)" }}
                           className={`group relative flex flex-col sm:flex-row sm:items-center gap-3 px-4 py-3.5 rounded-xl border transition-all ${
                             b.settled
                               ? "bg-[var(--surface-2)] border-[var(--success)]"
@@ -2566,55 +2706,76 @@ export default function AttendanceManager() {
                               <Trash2 className="w-3.5 h-3.5" />
                             </Button>
                           </div>
-                        </div>
+                        </motion.div>
                       );
                     })}
-                  </div>
+                  </motion.div>
                 );
               })()}
 
               {/* Per-employee outstanding breakdown */}
               {borrowingStats.perEmployee.length > 0 && (
-                <Card className="bg-slate-950/60 border-sky-900/40 rounded-xl mt-6">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm text-slate-300 flex items-center gap-2">
-                      <IndianRupee className="w-4 h-4 text-orange-400" />
-                      Per-Employee Outstanding
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {borrowingStats.perEmployee.map((ep) => (
-                        <div key={ep.id} className="flex items-center gap-3 py-2 border-b border-slate-800/60 last:border-0">
-                          <div
-  className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 border border-[var(--border-accent)] shadow-md shadow-[var(--accent-glow)]"
-  style={{
-    background:
-      "linear-gradient(135deg, var(--accent-500) 0%, var(--accent-600) 100%)",
-    color: "var(--accent-400)",
-  }}
->
-  {ep.name[0]?.toUpperCase()}
-</div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-slate-200 truncate">{ep.name}</p>
-                            <div className="flex gap-3 text-xs text-slate-500 mt-0.5">
-                              {ep.borrowed > 0 && <span className="text-amber-500">Borrowed ₹{ep.borrowed.toLocaleString("en-IN")}</span>}
-                              {ep.fines > 0 && <span className="text-red-500">Fined ₹{ep.fines.toLocaleString("en-IN")}</span>}
-                              {ep.settled > 0 && <span className="text-emerald-600">Settled ₹{ep.settled.toLocaleString("en-IN")}</span>}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.35 }}
+                >
+                  <Card className="bg-slate-950/60 border-sky-900/40 rounded-xl mt-6">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm text-slate-300 flex items-center gap-2">
+                        <IndianRupee className="w-4 h-4 text-orange-400" />
+                        Per-Employee Outstanding
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <motion.div 
+                        className="space-y-2"
+                        initial="hidden"
+                        animate="visible"
+                        variants={{
+                          visible: { transition: { staggerChildren: 0.03 } },
+                          hidden: {}
+                        }}
+                      >
+                        {borrowingStats.perEmployee.map((ep) => (
+                          <motion.div 
+                            key={ep.id} 
+                            variants={{
+                              hidden: { opacity: 0, x: -10 },
+                              visible: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+                            }}
+                            className="flex items-center gap-3 py-2 border-b border-slate-800/60 last:border-0"
+                          >
+                            <div
+                              className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 border border-[var(--border-accent)] shadow-md shadow-[var(--accent-glow)]"
+                              style={{
+                                background:
+                                  "linear-gradient(135deg, var(--accent-500) 0%, var(--accent-600) 100%)",
+                                color: "var(--accent-400)",
+                              }}
+                            >
+                              {ep.name[0]?.toUpperCase()}
                             </div>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <p className={`text-sm font-bold tabular-nums ${ep.outstanding > 0 ? "text-orange-300" : "text-emerald-400"}`}>
-                              ₹{ep.outstanding.toLocaleString("en-IN")}
-                            </p>
-                            <p className="text-[10px] text-slate-600 uppercase tracking-wide">{ep.outstanding > 0 ? "Due" : "Clear"}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-slate-200 truncate">{ep.name}</p>
+                              <div className="flex gap-3 text-xs text-slate-500 mt-0.5">
+                                {ep.borrowed > 0 && <span className="text-amber-500">Borrowed ₹{ep.borrowed.toLocaleString("en-IN")}</span>}
+                                {ep.fines > 0 && <span className="text-red-500">Fined ₹{ep.fines.toLocaleString("en-IN")}</span>}
+                                {ep.settled > 0 && <span className="text-emerald-600">Settled ₹{ep.settled.toLocaleString("en-IN")}</span>}
+                              </div>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <p className={`text-sm font-bold tabular-nums ${ep.outstanding > 0 ? "text-orange-300" : "text-emerald-400"}`}>
+                                ₹{ep.outstanding.toLocaleString("en-IN")}
+                              </p>
+                              <p className="text-[10px] text-slate-600 uppercase tracking-wide">{ep.outstanding > 0 ? "Due" : "Clear"}</p>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </motion.div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
               )}
             </TabsContent>
 

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -176,20 +177,20 @@ export function DayAttendanceEditor({
 
               {/* Mode Toggle */}
               <div className="mode-toggle">
-                <button
-                  className={`mode-toggle__btn ${mode === "drag" ? "mode-toggle__btn--active" : ""}`}
-                  onClick={() => setMode("drag")}
-                >
-                  <GripVertical className="w-3.5 h-3.5" />
-                  {t('manage_modal.drag')}
-                </button>
-                <button
-                  className={`mode-toggle__btn ${mode === "select" ? "mode-toggle__btn--active" : ""}`}
-                  onClick={() => setMode("select")}
-                >
-                  <MousePointerClick className="w-3.5 h-3.5" />
-                  {t('manage_modal.select')}
-                </button>
+                {(["drag", "select"] as const).map((m) => (
+                  <motion.button
+                    key={m}
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.95 }}
+                    className={`mode-toggle__btn ${mode === m ? "mode-toggle__btn--active" : ""}`}
+                    onClick={() => setMode(m)}
+                  >
+                    {m === "drag"
+                      ? <><GripVertical className="w-3.5 h-3.5" />{t('manage_modal.drag')}</>
+                      : <><MousePointerClick className="w-3.5 h-3.5" />{t('manage_modal.select')}</>
+                    }
+                  </motion.button>
+                ))}
               </div>
             </div>
 
@@ -224,12 +225,20 @@ export function DayAttendanceEditor({
         </DialogHeader>
 
         {/* Error Banner */}
-        {errorMsg && (
-          <div className="mx-4 mb-0 mt-2 flex items-center gap-2 rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-xs text-rose-700 dark:border-rose-800/50 dark:bg-rose-950/40 dark:text-rose-300 animate-in fade-in slide-in-from-top-1 duration-200 shrink-0">
-            <span className="text-rose-500 dark:text-rose-400 text-base leading-none">⚠</span>
-            {errorMsg}
-          </div>
-        )}
+        <AnimatePresence>
+          {errorMsg && (
+            <motion.div
+              initial={{ opacity: 0, y: -8, height: 0 }}
+              animate={{ opacity: 1, y: 0, height: "auto" }}
+              exit={{ opacity: 0, y: -8, height: 0 }}
+              transition={{ duration: 0.22 }}
+              className="mx-4 mb-0 mt-2 flex items-center gap-2 rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-xs text-rose-700 dark:border-rose-800/50 dark:bg-rose-950/40 dark:text-rose-300 shrink-0 overflow-hidden"
+            >
+              <span className="text-rose-500 dark:text-rose-400 text-base leading-none">⚠</span>
+              {errorMsg}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {mode === "select" ? (
           <SelectAttendanceTab
@@ -257,13 +266,16 @@ export function DayAttendanceEditor({
             </div>
             <ScrollArea className="flex-1 p-3">
               <div className="flex flex-col gap-2">
-                {filteredEmployees.map((emp) => {
+                {filteredEmployees.map((emp, i) => {
                   const isAssigned = assignedEmployeeIds.has(emp.id);
                   return (
-                  <div
+                  <motion.div
                     key={emp.id}
+                    initial={{ opacity: 0, x: -16 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.03, type: "spring", stiffness: 300, damping: 24 }}
                     draggable
-                    onDragStart={(e) => handleDragStart(e, emp.id)}
+                    onDragStart={(e) => handleDragStart(e as unknown as React.DragEvent, emp.id)}
                     onDragEnd={() => setDraggedEmpId(null)}
                     className="p-2 rounded border cursor-grab active:cursor-grabbing transition-all text-sm flex items-center gap-2"
                     style={{
@@ -275,20 +287,12 @@ export function DayAttendanceEditor({
                         : "var(--border-default)",
                       color: "var(--text-primary)",
                     }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = isAssigned
-                        ? "rgba(64,138,113,0.22)"
-                        : "var(--surface-card-hover)";
-                      e.currentTarget.style.borderColor = "var(--border-hover)";
+                    whileHover={{
+                      scale: 1.02,
+                      boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+                      transition: { duration: 0.15 },
                     }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = isAssigned
-                        ? "var(--accent-glow)"
-                        : "var(--surface-1)";
-                      e.currentTarget.style.borderColor = isAssigned
-                        ? "var(--border-accent)"
-                        : "var(--border-default)";
-                    }}
+                    whileTap={{ scale: 0.97 }}
                   >
                     <div
                       className="w-1.5 h-4 rounded-full shrink-0"
@@ -314,7 +318,7 @@ export function DayAttendanceEditor({
                         ●
                       </span>
                     )}
-                  </div>
+                  </motion.div>
                   );
                 })}
                 {filteredEmployees.length === 0 && (
